@@ -124,6 +124,7 @@
         </button>
       </div>
       <button class="saves-btn trade-max" type="button" data-trade-max hidden>Trade max</button>
+      <button class="saves-btn trade-max" type="button" data-ripple hidden>Ripple trade max</button>
       <div class="milestone" data-prize aria-live="polite">Your bakery opens today!</div>
       <p class="next" data-next>Next prize: 10 brownies baked</p>
       <p class="unlock" data-unlock></p>
@@ -165,6 +166,11 @@
      scenes:['Launch pad','Rocket spoon station','Space kitchen','Comet oven room','Space shop','Space station'],
      env:{empty:'🌙',bowl:'🌙',customer:'👽',truck:'🚀'}}
   ];
+  const morePrizes=[
+    [[1,'🤎 First extra chocolate!'],[10,'🍫 Chocolate lover!'],[100,'🌋 Fudge fanatic!'],[1000,'🏰 Chocolate castle!'],[10000,'👑 Cocoa king!'],[100000,'💎 Chocolate legend!']],
+    [[1,'🟫 First jumbo!'],[10,'💪 Big baker!'],[100,'🦣 Mammoth munchies!'],[1000,'🏔️ Mountain of brownies!'],[10000,'👑 Jumbo royalty!'],[100000,'💎 Jumbo legend!']],
+    [[1,'🪐 First Browniper!'],[10,'🌙 Moon munchies!'],[100,'☄️ Comet cook!'],[1000,'🌌 Galaxy of brownies!'],[10000,'🌟 Star baker!'],[100000,'👑 Ruler of the Browniverse!']]
+  ];
   const prizes=[[10,'🍫 First batch!'],[100,'😋 Taste-test champion!'],[1000,'⭐ Neighborhood favorite!'],[10000,'👑 Brownie royalty!'],[100000,'🐉 Dragon-sized dessert!'],[1000000,'🏆 Million-brownie baker!'],[10000000,'🚀 Galactic bakery!'],[100000000,'🌌 A universe of brownies!'],[1000000000,'💎 Billion-brownie legend!']];
   const SLOTS=3,slotKey=n=>'brownie-baker-slot-'+n,oldKey='brownie-baker-clicker-v1';
   const fresh=()=>({bank:0,total:0,owned:[0,0,0,0,0]});
@@ -178,6 +184,7 @@
     return null;
   }
   try{if(!localStorage.getItem(slotKey(1))){const s=JSON.parse(localStorage.getItem(oldKey));if(valid1(s))localStorage.setItem(slotKey(1),JSON.stringify(s));}}catch(e){}
+  const prizeList=k=>k?morePrizes[k-1]:prizes;let shownPrize=[0,0,0,0];
   let prizeReady=false,slot=null,sel=0,st=kinds.map(fresh),shownLevel=1,unlockMsg='',unlockMsgUntil=0,newTab=-1;
   const fmt=n=>Math.floor(n).toLocaleString('en-US');
   const tierOf=o=>{let t=0;for(let i=0;i<o.length;i++)if(o[i]>0)t=i+1;return t;};
@@ -188,8 +195,9 @@
   const perSecond=k=>items.reduce((sum,item,i)=>sum+item.rate*st[k].owned[i],0);
   const cost=(k,i)=>Math.ceil(items[i].cost*Math.pow(1.18,st[k].owned[i]));
   const grand=()=>st[0].total;
+  function rippleSim(){const banks=st.map(t=>t.bank),got=[0,0,0,0];for(let k=1;k<=sel;k++){const n=Math.floor(banks[k-1]/RATE[k]);if(n>0){banks[k-1]-=n*RATE[k];banks[k]+=n;got[k]=n;}}return got;}
   const ic=k=>kinds[k].tab.split(' ')[0];
-  const bankNode=select('[data-bank]'),bankLabel=select('[data-bank-label]'),totalNode=select('[data-total]'),ratesNode=select('[data-rates]'),tradeMax=select('[data-trade-max]'),prizeNode=select('[data-prize]'),nextNode=select('[data-next]'),unlockNode=select('[data-unlock]');
+  const bankNode=select('[data-bank]'),bankLabel=select('[data-bank-label]'),totalNode=select('[data-total]'),ratesNode=select('[data-rates]'),tradeMax=select('[data-trade-max]'),rippleBtn=select('[data-ripple]'),prizeNode=select('[data-prize]'),nextNode=select('[data-next]'),unlockNode=select('[data-unlock]');
   const sceneNode=select('[data-scene]'),sceneLabel=select('[data-scene-label]'),brownieNode=select('[data-brownie]'),bakeLabel=select('[data-bake-label]'),shopTitle=select('[data-shop-title]'),levelNode=select('[data-level]');
   const menu=select('[data-menu]'),game=select('[data-game]'),slotList=select('[data-slots]'),slotLabel=select('[data-slot-label]'),tabsNode=select('[data-tabs]');
   const buttons=items.map((_,i)=>select('[data-buy="'+i+'"]'));
@@ -224,12 +232,18 @@
     if(sel===0)ratesNode.textContent=fmt(perTap())+' / tap · '+perSecond(0).toLocaleString('en-US')+' / second';
     else{ratesNode.textContent=fmt(RATE[sel])+' '+ic(sel-1)+' = 1 '+ic(sel)+' · you have '+fmt(st[sel-1].bank)+' '+ic(sel-1)+' · '+perSecond(sel).toLocaleString('en-US')+' / second';}
     const mx=sel?Math.floor(st[sel-1].bank/RATE[sel]):0;
+    rippleBtn.hidden=sel<2;
+    if(sel>=2){const got=rippleSim(),any=got.some(n=>n>0),chain=Array.from({length:sel+1},(_,k)=>ic(k)).join('→');
+      rippleBtn.disabled=!any;rippleBtn.textContent='⏫ Ripple trade max '+chain+(got[sel]>0?': get '+fmt(got[sel])+' '+ic(sel):'');}
     tradeMax.hidden=sel===0;tradeMax.disabled=mx<1;tradeMax.textContent=mx>0?'Trade max: get '+fmt(mx)+' '+ic(sel):'Need '+fmt(RATE[sel]||0)+' '+(sel?kinds[sel-1].label:'')+' to trade';
-    const g=grand();let current='Your bakery opens today!';
-    for(const [threshold,label] of prizes)if(g>=threshold)current=label;
-    if(prizeNode.textContent!==current){if(prizeReady)prizeSound();prizeNode.textContent=current;}
-    const next=prizes.find(p=>p[0]>g);
-    nextNode.textContent=next?'Next prize: '+fmt(next[0])+' brownies baked':'Keep growing. Your bakery has no finish line!';
+    let won=false;
+    for(let k=0;k<kinds.length;k++){const n=prizeList(k).filter(p=>st[k].total>=p[0]).length;if(n>shownPrize[k]){if(prizeReady)won=true;shownPrize[k]=n;}}
+    if(won)prizeSound();
+    const PL=prizeList(sel),got=PL.filter(p=>t.total>=p[0]).length;
+    const current=got?PL[got-1][1]:(sel?'No '+K.name.toLowerCase()+' prizes yet':'Your bakery opens today!');
+    if(prizeNode.textContent!==current)prizeNode.textContent=current;
+    const next=PL[got];
+    nextNode.textContent=next?'Next prize: '+fmt(next[0])+' '+K.label+' made ('+got+' of '+PL.length+' prizes)':(sel===kinds.length-1?'🏆 You beat Brownie Baker! You won the final prize!':'All '+PL.length+' '+K.name.toLowerCase()+' prizes won!');
     if(performance.now()<unlockMsgUntil)unlockNode.textContent=unlockMsg;
     else if(lvl<kinds.length){const prev=kinds[lvl-1];unlockNode.textContent='🔒 Next unlock: '+kinds[lvl].label+' at '+fmt(RATE[lvl])+' '+prev.label+' made ('+fmt(Math.min(st[lvl-1].total,RATE[lvl]))+' so far)';}
     else unlockNode.textContent='🪐 Every brownie type unlocked!';
@@ -277,7 +291,7 @@
     if(s){st=s.types.map(t=>({bank:t.bank,total:t.total,owned:t.owned.slice()}));sel=s.sel;}else{st=kinds.map(fresh);sel=0;}
     if(!unlocked(sel))sel=0;
     save();
-    shownLevel=levelOf(st);unlockMsgUntil=0;newTab=-1;
+    shownLevel=levelOf(st);unlockMsgUntil=0;newTab=-1;shownPrize=st.map((t,k)=>prizeList(k).filter(p=>t.total>=p[0]).length);
     helperAcc.forEach(a=>a.fill(0));
     slotLabel.textContent='Playing Save '+n;
     menu.hidden=true;game.hidden=false;last=performance.now();prizeReady=false;render();prizeReady=true;
@@ -320,6 +334,14 @@
     if(n<1||st[k-1].bank<need){addFloat('Need '+fmt(RATE[k])+' '+ic(k-1),'float need',x-r.left,y-r.top);return;}
     st[k-1].bank-=need;earn(k,n);tapSound();if(showPops)addFloat('+'+fmt(n)+' '+ic(k),'float',x-r.left+(Math.random()*16-8),y-r.top);render();save();
   }
+  rippleBtn.addEventListener('click',()=>{
+    if(slot===null||sel<2)return;
+    let gotTop=0;
+    for(let k=1;k<=sel;k++){const n=Math.floor(st[k-1].bank/RATE[k]);if(n>0){st[k-1].bank-=n*RATE[k];earn(k,n);if(k===sel)gotTop=n;}}
+    buySound();
+    if(showPops&&gotTop>0){const r=floatsLayer.getBoundingClientRect();addFloat('+'+fmt(gotTop)+' '+ic(sel),'float',r.width/2,r.height/2);}
+    render();save();
+  });
   tradeMax.addEventListener('click',()=>{if(slot===null||!sel)return;trade(Math.floor(st[sel-1].bank/RATE[sel]));buySound();});
   // ---- Canvas popups: one +1 for every helper brownie ----
   const fx=document.createElement('canvas');fx.className='fx';fx.setAttribute('aria-hidden','true');sceneNode.appendChild(fx);
