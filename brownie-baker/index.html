@@ -93,6 +93,18 @@
     #brownie-baker .brownie[data-kind="3"]::after {content:'';position:absolute;left:82px;top:86px;width:34px;height:20px;border-radius:50%;background:radial-gradient(#3b1409 30%,#6b2a18 70%);border:3px solid #e3c192}
     #brownie-baker .brownie[data-kind="3"] .chip {width:9px;height:8px;border-radius:50%;background:#2a120a;box-shadow:none}
     #brownie-baker .trade-max {margin-top:10px;width:100%}
+    #brownie-baker .scene[data-type="4"] {background:radial-gradient(circle at 15% 25%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 80% 18%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 65% 75%,#fff 0 1px,transparent 2px),radial-gradient(circle at 50% 50%,#3a1d10 0,#120806 45%,#05030a 75%)!important}
+    #brownie-baker .scene[data-type="5"] {background:radial-gradient(circle at 10% 15%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 30% 80%,#fff 0 1px,transparent 2px),radial-gradient(circle at 75% 25%,#ffe9b0 0 2px,transparent 3px),radial-gradient(circle at 90% 70%,#fff 0 1.5px,transparent 2.5px),radial-gradient(ellipse at 30% 30%,#7a3b8f55,transparent 50%),radial-gradient(ellipse at 75% 70%,#2b5fa855,transparent 50%),linear-gradient(#0a0620,#1c0f33)!important}
+    #brownie-baker .scene[data-type="4"] .bake,#brownie-baker .scene[data-type="5"] .bake {color:#fff}
+    #brownie-baker .brownie[data-kind="4"] {width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#000 0 30%,#1a0a04 38%,#7a4428 48%,#e3a868 54%,#9a6040 60%,#3b1d12 70%,transparent 72%);box-shadow:0 0 34px #e3a86888;animation:bb-spin 6s linear infinite}
+    #brownie-baker .brownie[data-kind="4"]::before {inset:-8px;border:3px dashed #c9955f99;border-radius:50%;opacity:1}
+    #brownie-baker .brownie[data-kind="4"] .chip {width:7px;height:7px;border-radius:50%;background:#e3c192;box-shadow:none}
+    #brownie-baker .brownie[data-kind="5"] {width:156px;height:156px;border-radius:50%;background:radial-gradient(circle,#fff3d6 0 6%,#e3a868 12%,transparent 40%),conic-gradient(from 0deg,#3b1d12,#9a6040,#e3c192,#5a2c1c,#c9955f,#3b1d12,#7a4428,#e3c192,#3b1d12);box-shadow:0 0 36px #c78bff66,0 0 18px #e3a86888;animation:bb-spin 12s linear infinite}
+    #brownie-baker .brownie[data-kind="5"]::before {inset:10px;border:2px solid #fff6;border-radius:50%;opacity:1}
+    #brownie-baker .brownie[data-kind="5"]::after {content:'✨';position:absolute;left:22px;top:18px;font-size:16px}
+    #brownie-baker .brownie[data-kind="5"] .chip {width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff}
+    @keyframes bb-spin {to{rotate:360deg}}
+    @media (prefers-reduced-motion:reduce){#brownie-baker .brownie[data-kind="4"],#brownie-baker .brownie[data-kind="5"]{animation:none}}
     #brownie-baker .bar-actions {display:flex;gap:8px;flex-wrap:wrap}
     #brownie-baker .game-bar {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-8px 0 18px;flex-wrap:wrap}
     @media(max-width:520px){#brownie-baker{padding:18px}#brownie-baker .layout{grid-template-columns:1fr;gap:22px}#brownie-baker .brownie{width:146px}#brownie-baker .balance{font-size:34px}}
@@ -146,7 +158,7 @@
 (() => {
   const root=document.getElementById('brownie-baker');
   const select=s=>root.querySelector(s);
-  const RATE=[0,1000,100,10],TAPB=[1,100,10000,1000000];
+  const RATE=[0,1000,100,10,10,10],TAPB=[1,100,10000,1000000,10000000,100000000];
   const items=[{cost:15,tap:1,rate:0},{cost:25,tap:0,rate:.5},{cost:180,tap:0,rate:5},{cost:1500,tap:0,rate:35},{cost:12000,tap:0,rate:250}];
   const kinds=[
     {name:'Normal',tab:'🍫 Normal',label:'brownies',bake:'Bake a brownie',shop:'Bakery shop',
@@ -164,12 +176,22 @@
     {name:'Browniper',tab:'🪐 Browniper',label:'Brownipers',bake:'Bake a Browniper',shop:'Space shop',
      items:['🚀 Rocket spoon','👩‍🚀 Astronaut baker','☄️ Comet oven','🛸 Space shop','🛰️ Space station'],
      scenes:['Launch pad','Rocket spoon station','Space kitchen','Comet oven room','Space shop','Space station'],
-     env:{empty:'🌙',bowl:'🌙',customer:'👽',truck:'🚀'}}
+     env:{empty:'🌙',bowl:'🌙',customer:'👽',truck:'🚀'}},
+    {name:'Brownie hole',tab:'🕳️ Brownie hole',label:'brownie holes',bake:'Bake a brownie hole',shop:'Brownie hole shop',
+     items:['🌀 Swirl spoon','🧑‍🔬 Space scientist','⚫ Gravity oven','🏛️ Hole hotel','🧲 Gravity factory'],
+     scenes:['Edge of space','Swirl station','Gravity lab','Gravity oven room','Hole hotel','Gravity factory'],
+     env:{empty:'⭐',bowl:'⭐',customer:'👾',truck:'☄️'}},
+    {name:'Browniverse',tab:'🌌 Browniverse',label:'Browniverses',bake:'Bake a Browniverse',shop:'Universe shop',
+     items:['🪄 Magic spoon','🧙 Universe wizard','🌞 Star oven','🌍 Planet shop','✨ Galaxy factory'],
+     scenes:['Empty universe','Magic spoon station','Wizard kitchen','Star oven room','Planet shop','Galaxy factory'],
+     env:{empty:'✨',bowl:'✨',customer:'🧚',truck:'🌠'}}
   ];
   const morePrizes=[
     [[1,'🤎 First extra chocolate!'],[10,'🍫 Chocolate lover!'],[100,'🌋 Fudge fanatic!'],[1000,'🏰 Chocolate castle!'],[10000,'👑 Cocoa king!'],[100000,'💎 Chocolate legend!']],
     [[1,'🟫 First jumbo!'],[10,'💪 Big baker!'],[100,'🦣 Mammoth munchies!'],[1000,'🏔️ Mountain of brownies!'],[10000,'👑 Jumbo royalty!'],[100000,'💎 Jumbo legend!']],
-    [[1,'🪐 First Browniper!'],[10,'🌙 Moon munchies!'],[100,'☄️ Comet cook!'],[1000,'🌌 Galaxy of brownies!'],[10000,'🌟 Star baker!'],[100000,'👑 Ruler of the Browniverse!']]
+    [[1,'🪐 First Browniper!'],[10,'🌙 Moon munchies!'],[100,'☄️ Comet cook!'],[1000,'🌌 Galaxy of brownies!'],[10000,'🌟 Star baker!'],[100000,'👑 Ruler of the Browniverse!']],
+    [[1,'🕳️ First brownie hole!'],[10,'🌀 Swirly snack!'],[100,'🧲 Chocolate gravity!'],[1000,'⚫ Event horizon of fudge!'],[10000,'👑 Brownie hole boss!'],[100000,'💎 Brownie hole legend!']],
+    [[1,'🌌 First Browniverse!'],[10,'✨ Multiverse munchies!'],[100,'🌠 Big Bake theory!'],[1000,'🪄 Universe crafter!'],[10000,'🌟 Cosmic chef!'],[100000,'🔭 Beyond the Observable Browniverses!']]
   ];
   const prizes=[[10,'🍫 First batch!'],[100,'😋 Taste-test champion!'],[1000,'⭐ Neighborhood favorite!'],[10000,'👑 Brownie royalty!'],[100000,'🐉 Dragon-sized dessert!'],[1000000,'🏆 Million-brownie baker!'],[10000000,'🚀 Galactic bakery!'],[100000000,'🌌 A universe of brownies!'],[1000000000,'💎 Billion-brownie legend!']];
   const SLOTS=3,slotKey=n=>'brownie-baker-slot-'+n,oldKey='brownie-baker-clicker-v1';
@@ -179,12 +201,13 @@
   function readSlot(n){
     try{const s=JSON.parse(localStorage.getItem(slotKey(n)));
       if(valid2(s))return s;
-      if(valid1(s))return {v:2,sel:0,types:[s,fresh(),fresh(),fresh()]};
+      if(s&&s.v===2&&Array.isArray(s.types)&&s.types.length>0&&s.types.length<kinds.length&&s.types.every(valid1)&&Number.isInteger(s.sel)&&s.sel>=0&&s.sel<s.types.length){while(s.types.length<kinds.length)s.types.push(fresh());return s;}
+      if(valid1(s))return {v:2,sel:0,types:[s].concat(kinds.slice(1).map(fresh))};
     }catch(e){}
     return null;
   }
   try{if(!localStorage.getItem(slotKey(1))){const s=JSON.parse(localStorage.getItem(oldKey));if(valid1(s))localStorage.setItem(slotKey(1),JSON.stringify(s));}}catch(e){}
-  const prizeList=k=>k?morePrizes[k-1]:prizes;let shownPrize=[0,0,0,0];
+  const prizeList=k=>k?morePrizes[k-1]:prizes;let shownPrize=kinds.map(()=>0);
   let prizeReady=false,slot=null,sel=0,st=kinds.map(fresh),shownLevel=1,unlockMsg='',unlockMsgUntil=0,newTab=-1;
   const fmt=n=>Math.floor(n).toLocaleString('en-US');
   const tierOf=o=>{let t=0;for(let i=0;i<o.length;i++)if(o[i]>0)t=i+1;return t;};
@@ -243,7 +266,7 @@
     const current=got?PL[got-1][1]:(sel?'No '+K.name.toLowerCase()+' prizes yet':'Your bakery opens today!');
     if(prizeNode.textContent!==current)prizeNode.textContent=current;
     const next=PL[got];
-    nextNode.textContent=next?'Next prize: '+fmt(next[0])+' '+K.label+' made ('+got+' of '+PL.length+' prizes)':(sel===kinds.length-1?'🏆 You beat Brownie Baker! You won the final prize!':'All '+PL.length+' '+K.name.toLowerCase()+' prizes won!');
+    nextNode.textContent=next?'Next prize: '+fmt(next[0])+' '+K.label+' made ('+got+' of '+PL.length+' prizes)':(sel===kinds.length-1?'🏆 You won the last prize! Keep baking.':'All '+PL.length+' '+K.name.toLowerCase()+' prizes won!');
     if(performance.now()<unlockMsgUntil)unlockNode.textContent=unlockMsg;
     else if(lvl<kinds.length){const prev=kinds[lvl-1];unlockNode.textContent='🔒 Next unlock: '+kinds[lvl].label+' at '+fmt(RATE[lvl])+' '+prev.label+' made ('+fmt(Math.min(st[lvl-1].total,RATE[lvl]))+' so far)';}
     else unlockNode.textContent='🪐 Every brownie type unlocked!';
