@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Base Expansion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef4f0;--card:#ffffff;--text:#1f2a24;--muted:#5d6b63;--line:#d3ded7;--good:#23824f;--warn:#c4362b;--btn:#1f2a24;--btnText:#ffffff;
+  color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1c2420;--text:#eef4f0;--muted:#a3b2a9;--line:#2e3a34;--good:#5fd08f;--warn:#ff7d70;--btn:#eef4f0;--btnText:#121815;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815;--card:#1c2420;--text:#eef4f0;--muted:#a3b2a9;--line:#2e3a34;--good:#5fd08f;--warn:#ff7d70;--btn:#eef4f0;--btnText:#121815;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);touch-action:manipulation}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Baloo 2",ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif;font-size:17px;line-height:1.35;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--card)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:3px solid #3a8fd6;outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 40px}
+body.playing{overflow:hidden;overscroll-behavior:none;position:fixed;inset:0}
+body.playing #main{display:none}
+
+#top{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:6;background:var(--card);border-bottom:2px solid var(--line)}
+.resrow{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 4px;max-width:900px;margin:0 auto;scrollbar-width:none}
+.resrow::-webkit-scrollbar{display:none}
+.chip{flex:none;background:var(--bg);border-radius:999px;padding:2px 10px;font-weight:700;white-space:nowrap}
+.gather{display:flex;gap:6px;align-items:center;padding:2px 14px 8px;max-width:900px;margin:0 auto}
+.gbtn{background:var(--btn);color:var(--btnText);border-radius:12px;padding:4px 12px;font-weight:700}
+.gbtn:active{transform:scale(.93)}
+.stamwrap{display:flex;align-items:center;gap:6px;flex:1;max-width:300px;font-weight:800}
+.stam{flex:1;height:16px;border-radius:10px;background:var(--line);overflow:hidden}
+.stam i{display:block;height:100%;background:#ffb020;transition:width .3s}
+.stam.low i{background:#e5533d}
+.menu{margin-left:auto;color:var(--muted);font-weight:700;padding:4px 6px}
+
+#game{position:fixed;inset:0;display:none;background:#9fd8ff}
+body.playing #game{display:block}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#touch{position:absolute;inset:0;touch-action:none}
+#hud{position:absolute;left:0;right:0;pointer-events:none;padding:8px calc(12px + env(safe-area-inset-right,0px)) 0 calc(12px + env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+#hud button{pointer-events:auto}
+.htabs{display:flex;gap:6px;flex-wrap:wrap;max-width:100%}
+.htabs::-webkit-scrollbar{display:none}
+.hrow{display:flex;gap:6px;flex-wrap:wrap}
+.hbtn{background:rgba(255,255,255,.9);color:#1f2a24;border-radius:12px;padding:4px 10px;font-weight:700;flex:none;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.hbtn.on{background:#1f2a24;color:#fff}
+.banner{background:rgba(196,54,43,.93);color:#fff;border-radius:12px;padding:6px 10px;font-weight:700;max-width:520px}
+.banner.tip{background:rgba(255,255,255,.9);color:#1f2a24}
+#act{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));background:#ffd447;color:#1f2a24;font-weight:800;font-size:20px;line-height:1.15;border-radius:20px;padding:14px 18px;box-shadow:0 4px 0 rgba(0,0,0,.35);max-width:52vw;text-align:center}
+#act:active{transform:translateY(2px)}
+#joy{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.65);display:none;pointer-events:none}
+#joy i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:rgba(255,255,255,.9)}
+#hint{position:absolute;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(28px + env(safe-area-inset-bottom,0px));color:#fff;text-shadow:0 1px 3px #000,0 0 8px #000;font-weight:800;pointer-events:none;max-width:40vw}
+
+.cost{display:inline-block;border-radius:8px;padding:0 6px;margin:1px 2px 1px 0;background:var(--bg);font-weight:700;font-size:14px}
+.cost.no{color:var(--warn)}
+#sheet{position:fixed;inset:0;z-index:20;display:none;background:rgba(0,0,0,.4)}
+#sheet.on{display:flex;align-items:flex-end;justify-content:center}
+.sheetbox{background:var(--card);color:var(--text);width:100%;max-width:720px;max-height:82vh;border-radius:24px 24px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheethead{display:flex;align-items:center;padding:14px 16px 6px}
+.sheethead h2{margin:0;font-size:22px;line-height:1.1}
+.x{margin-left:auto;font-size:22px;padding:4px 8px}
+.sheetbody{overflow-y:auto;padding:0 16px 16px}
+.row{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:2px solid var(--line)}
+.row .e{font-size:36px;width:48px;text-align:center;flex:none}
+.row .info{flex:1;min-width:0}
+.row b{font-size:18px}
+.eff{color:var(--muted);font-size:14px}
+.go{background:var(--btn);color:var(--btnText);border-radius:12px;padding:6px 14px;font-weight:800;flex:none}
+.go.dim{opacity:.35}
+.wide{width:100%;margin-top:10px;padding:10px}
+.blurb{color:var(--muted);margin:6px 0}
+.mainbadge{display:inline-block;background:color-mix(in srgb,#f2b705 25%,var(--card));border-radius:12px;padding:3px 10px;font-weight:700;margin:2px 0 6px}
+.mainbtn{border:2px dashed var(--line);border-radius:12px;padding:3px 10px;font-weight:700;margin:2px 0 6px}
+.meters{display:grid;gap:6px;margin:6px 0}
+.meter{border-radius:14px;padding:8px 12px;background:var(--bg);border:2px solid var(--line)}
+.meter.bad{border-color:var(--warn);color:var(--warn);font-weight:700}
+.bar{height:10px;border-radius:10px;background:var(--line);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--good)}
+.meter.bad .bar i{background:var(--warn)}
+.prod{color:var(--muted);font-size:15px;margin:4px 0}
+.rename{display:flex;gap:6px;margin:6px 0}
+.rename input{flex:1;min-width:0;font:inherit;font-size:18px;padding:6px 10px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--text);-webkit-user-select:text;user-select:text}
+.pen{font-size:15px;font-weight:700;border:2px solid var(--line);border-radius:12px;padding:2px 10px}
+.card{background:var(--bg);border:2px solid var(--line);border-radius:18px;padding:12px;margin-top:10px;display:flex;gap:12px;align-items:flex-start}
+.card .be{font-size:40px;line-height:1}
+.card h3{margin:0;font-size:20px}
+.card p{margin:2px 0 6px;color:var(--muted);font-size:15px}
+.sws{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.sw{width:44px;height:44px;border-radius:12px;border:3px solid var(--line)}
+.sw.on{border-color:#ffd447;box-shadow:0 0 0 2px #1f2a24}
+.slots h1{font-size:40px;margin-top:24px}
+.slot{width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;margin-top:10px}
+.slot b{font-size:20px}
+.del{color:var(--warn);font-size:14px;font-weight:700;padding:4px 0}
+.invpop,#invpop{position:fixed;inset:0;z-index:25;display:none;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px}
+#invpop.on{display:flex}
+.invbox{background:var(--card);color:var(--text);border-radius:24px;padding:20px;max-width:360px;text-align:center;display:grid;gap:6px}
+.invbtns{display:flex;gap:8px;justify-content:center;margin-top:6px}
+.uline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}
+.tog{width:60px;height:34px;border-radius:20px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.tog i{position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .2s}
+.tog.on{background:#3a8fd6}
+.tog.on i{left:29px}
+#toast{position:fixed;left:50%;top:40%;transform:translateX(-50%);background:var(--btn);color:var(--btnText);padding:8px 16px;border-radius:14px;font-weight:700;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="top" style="display:none"></div>
+<div class="wrap" id="main"></div>
+<div id="game"><canvas id="cv"></canvas><div id="touch"></div><div id="joy"><i></i></div><div id="hud"></div><div id="hint">👈 Drag here to walk<br>Drag the other side to look 👉</div><button id="act" data-p="act"></button></div>
+<div id="sheet"></div>
+<div id="invpop"></div>
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const RES={food:['🍎','Food'],wood:['🪵','Wood'],stone:['🪨','Stone'],coins:['🪙','Coins'],pearls:['🦪','Pearls'],gems:['💎','Gems'],clouds:['☁️','Cloud Puffs'],stardust:['✨','Stardust'],obsidian:['⚫','Obsidian']};
+const COND={oxygen:['🫧','Oxygen'],light:['💡','Light'],lift:['🎈','Lift'],power:['⚡','Power'],cool:['❄️','Cooling']};
+const B={
+  farm:{n:'Farm',e:'🌾',c:{wood:10},m:{food:1}},
+  lumber:{n:'Lumber Camp',e:'🪓',c:{food:10},m:{wood:1}},
+  quarry:{n:'Quarry',e:'⛏️',c:{wood:15},m:{stone:1}},
+  market:{n:'Market',e:'🏪',c:{wood:25,stone:15},m:{coins:1}},
+  house:{pop:3,n:'Cozy House',e:'🏠',c:{wood:40,stone:30,coins:20},h:0.1},
+  statue:{n:'Star Statue',e:'🏆',c:{coins:500,stardust:20},sb:0.25},
+  pump:{n:'Air Pump',e:'🫧',c:{stone:30,coins:20},g:{oxygen:4}},
+  kelp:{n:'Kelp Farm',e:'🌿',c:{coins:25},m:{food:3},u:{oxygen:1}},
+  fish:{n:'Fish Market',e:'🐟',c:{coins:60,food:30},m:{coins:3},u:{oxygen:1}},
+  pearl:{n:'Pearl Diver',e:'🦪',c:{coins:80,stone:30},m:{pearls:0.3},u:{oxygen:1}},
+  shell:{pop:3,n:'Shell House',e:'🐚',c:{coins:100,pearls:10},h:0.1,u:{oxygen:2}},
+  lamp:{n:'Lantern',e:'🏮',c:{wood:30,coins:30},g:{light:4}},
+  shroom:{n:'Mushroom Cave',e:'🍄',c:{coins:40},m:{food:4},u:{light:1}},
+  drill:{n:'Deep Drill',e:'⚒️',c:{coins:80,wood:40},m:{stone:5},u:{light:1}},
+  gem:{n:'Gem Cutter',e:'💎',c:{coins:150,pearls:10},m:{gems:0.3},u:{light:1}},
+  cabin:{pop:3,n:'Cave Cabin',e:'🛖',c:{coins:150,gems:5},h:0.1,u:{light:2}},
+  balloon:{n:'Big Balloon',e:'🎈',c:{coins:60,wood:40},g:{lift:4}},
+  garden:{n:'Sky Garden',e:'🌻',c:{coins:60},m:{food:5},u:{lift:1}},
+  windmill:{n:'Wind Mill',e:'🌀',c:{coins:150,wood:80},m:{coins:6},u:{lift:1}},
+  catcher:{n:'Cloud Catcher',e:'🪁',c:{coins:250,gems:10},m:{clouds:0.3},u:{lift:1}},
+  nest:{pop:3,n:'Sky Nest House',e:'🪺',c:{coins:300,clouds:5},h:0.1,u:{lift:2}},
+  rainbow:{n:'Rainbow Garden',e:'🌈',cloud:1,c:{coins:120},m:{food:11.5},u:{lift:2}},
+  storm:{n:'Storm Mill',e:'⛈️',cloud:1,c:{coins:300,wood:120},m:{coins:10.5},u:{lift:2}},
+  megacatch:{n:'Mega Cloud Catcher',e:'🌪️',cloud:1,c:{coins:500,gems:20},m:{clouds:0.65},u:{lift:2}},
+  oxyfarm:{n:'Oxygen Farm',e:'🌱',c:{coins:200,food:150},g:{oxygen:4},u:{power:1}},
+  solar:{n:'Solar Panel',e:'🔆',c:{coins:200,stone:150},g:{power:4}},
+  lab:{n:'Space Lab',e:'🔬',c:{coins:400,gems:20},m:{coins:12},u:{oxygen:1,power:1}},
+  dust:{n:'Stardust Collector',e:'🛰️',c:{coins:500,clouds:15},m:{stardust:0.2},u:{oxygen:1,power:2}},
+  pod:{pop:3,n:'Sleep Pod',e:'🛸',c:{coins:600,stardust:5},h:0.1,u:{oxygen:2,power:1}},
+  tower2:{n:'Obsidian Tower',e:'🗼',c:{coins:8000,obsidian:50},sb:0.25},
+  icetower:{n:'Ice Tower',e:'🧊',c:{coins:2000,stone:500},g:{cool:4}},
+  pepper:{n:'Fire Pepper Farm',e:'🌶️',c:{coins:1500},m:{food:20},u:{cool:1}},
+  forge:{n:'Lava Forge',e:'🔥',c:{coins:3000,stone:800},m:{coins:25},u:{cool:1}},
+  obsdrill:{n:'Obsidian Drill',e:'🌋',c:{coins:4000,gems:100},m:{obsidian:0.3},u:{cool:1}},
+  bunker:{pop:3,n:'Brick Bunker',e:'🧱',c:{coins:5000,obsidian:10},h:0.1,u:{cool:2}},
+  hq_volcano:{n:'Heat Shield',e:'🛡️',fixed:1,pop:3,g:{cool:2}},
+  hq_home:{n:'Camp',e:'🏕️',fixed:1,pop:3},
+  hq_ocean:{n:'Dive Station',e:'🤿',fixed:1,pop:3,g:{oxygen:2}},
+  hq_mine:{n:'Mine Entrance',e:'🕳️',fixed:1,pop:3,g:{light:2}},
+  hq_sky:{n:'Sky Dock',e:'⚓',fixed:1,pop:3,g:{lift:2}},
+  hq_space:{n:'Command Pod',e:'🚀',fixed:1,pop:3,g:{oxygen:2,power:2}},
+};
+const BASES={
+  home:{n:'Home Meadow',e:'🌳',tier:1,conds:[],list:['farm','lumber','quarry','market','house','statue','tower2'],scen:['🌲','🌳','🌼','🌲','🪨'],
+    blurb:'Green grass and blue sky. Nothing special needed here!',unlock:null},
+  ocean:{n:'Coral Deep',e:'🐠',tier:2,conds:['oxygen'],list:['pump','kelp','fish','pearl','shell'],scen:['🪸','🐟','🪸','🪼','🐠'],
+    blurb:'Deep under the sea. Everyone needs oxygen to breathe, so build Air Pumps!',unlock:{coins:120,stone:80}},
+  mine:{n:'Crystal Mine',e:'⛏️',tier:3,conds:['light'],list:['lamp','shroom','drill','gem','cabin'],scen:['🪨','⛰️','🪨','🦇'],
+    blurb:'Far underground it’s pitch black. Every building needs Lanterns for light. Buying land digs out more tunnel!',unlock:{coins:300,wood:150,pearls:10}},
+  sky:{n:'Sky Island',e:'🏝️',tier:5,cloudList:['rainbow','storm','megacatch'],conds:['lift'],list:['balloon','garden','windmill','catcher','nest'],scen:['☁️','🕊️','☁️','🌈'],
+    blurb:'An island floating in the clouds. Buildings are heavy, so Big Balloons keep it from sinking! You can also turn land into walkable clouds.',unlock:{coins:700,gems:15}},
+  space:{n:'Star Station',e:'🪐',tier:8,conds:['oxygen','power'],list:['oxyfarm','solar','lab','dust','pod'],scen:['⭐','✨','🌑','☄️','⭐'],
+    blurb:'There’s no air in space! You need Oxygen Farms to breathe and Solar Panels for power.',unlock:{coins:1500,clouds:20,gems:30}},
+  volcano:{n:'Volcano Core',e:'🌋',tier:12,secret:1,conds:['cool'],list:['icetower','pepper','forge','obsdrill','bunker'],scen:['🔥','💨','🔥','🌋'],
+    blurb:'A secret base inside a volcano! It’s super hot, so every building needs Ice Towers to stay cool. Don’t touch the lava!',unlock:{coins:20000,gems:200,stardust:20}},
+};
+const SHIRTS=[0xe63946,0x2a9df4,0x2ec27e,0xf4c430,0x9b5de5,0xff7eb6,0xff8c1a,0x333333];
+const HAIRS=[0x2b1a10,0x6b3e1f,0xe8c35a,0xd9622b,0x111111,0xcfcfcf,0x7b3fe4,0x2a9df4];
+const SKINS=[0xffdbac,0xf1c27d,0xe0ac69,0xc68642,0x8d5524,0x5a3825];
+const NODE={tree:{n:'Chop tree',e:'🪓',res:'wood',hp:4},rock:{n:'Mine rock',e:'⛏️',res:'stone',hp:4},bush:{n:'Pick apples',e:'🍎',res:'food',hp:3},
+  weed:{n:'Pick seaweed',e:'🌿',res:'food',hp:3},shroom:{n:'Pick mushrooms',e:'🍄',res:'food',hp:3},meteor:{n:'Mine space rock',e:'⛏️',res:'stone',hp:5}};
+const NODESET={volcano:['rock','rock','meteor'],home:['tree','tree','rock','bush'],ocean:['rock','weed','weed'],mine:['rock','rock','shroom'],sky:['tree','bush','tree'],space:['meteor']};
+const HITCOST=8,HITGAIN=2;
+const GEAR={ocean:'bubble',space:'bubble',mine:'hat'};
+const N=15, CC=7, MID=CC*N+CC, MAXSIZE=15, T=4, WALL=1.5, KEY=i=>'bb-save-'+i;
+
+let state=null, slot=null, view='home', sheet=null, renaming=false, pendingDel=null, toastT;
+
+/* ---------- game logic ---------- */
+function fmt(n){n=Math.max(0,n);if(n<10&&n%1)return (Math.floor(n*10)/10).toString();if(n<1000)return Math.floor(n).toString();if(n<1e6)return (n/1000).toFixed(1).replace('.0','')+'k';return (n/1e6).toFixed(1).replace('.0','')+'M'}
+function rate(n){return (Math.round(n*100)/100).toString()}
+function readSlot(i){try{const s=localStorage.getItem(KEY(i));return s?JSON.parse(s):null}catch(e){return null}}
+function save(){if(slot==null||!state)return;if(world&&state.bases[view]){const t=tileAt(P.x,P.z);if(t>=0&&state.bases[view].owned[t])state.bases[view].me=t}
+  state.t=Date.now();try{localStorage.setItem(KEY(slot),JSON.stringify(state))}catch(e){}}
+function rc(i){return[Math.floor(i/N),i%N]}
+function ring(i){const[r,c]=rc(i);return Math.max(Math.abs(r-CC),Math.abs(c-CC))*10+Math.abs(r-CC)+Math.abs(c-CC)}
+function nbrs(i){const[r,c]=rc(i),o=[];if(r>0)o.push(i-N);if(r<N-1)o.push(i+N);if(c>0)o.push(i-1);if(c<N-1)o.push(i+1);return o}
+function makeBase(k){const owned=Array(N*N).fill(false),grid=Array(N*N).fill(null);
+  for(let i=0;i<N*N;i++){const[r,c]=rc(i);if(Math.abs(r-CC)<=1&&Math.abs(c-CC)<=1)owned[i]=true}
+  grid[MID]='hq_'+k;return{nick:'',owned,grid,me:MID+N,size:9}}
+function emptyTiles(k){const b=state.bases[k];return b.owned.map((o,i)=>o&&!b.grid[i]&&!(b.cloud||[])[i]&&!(b.nodes||{})[i]&&i!==b.me&&i!==MID?i:-1).filter(i=>i>=0)}
+function spawnNode(k,i){const b=state.bases[k],L=NODESET[k],t=L[Math.floor(Math.random()*L.length)];b.nodes[i]={t,hp:NODE[t].hp}}
+function seedNodes(k){const b=state.bases[k];if(b.nodes)return;b.nodes={};const e=emptyTiles(k).sort(()=>Math.random()-.5).slice(0,3);e.forEach(i=>spawnNode(k,i))}
+function regrow(){for(const k in state.bases){const b=state.bases[k];seedNodes(k);const own=b.owned.filter(Boolean).length,cap=Math.max(3,Math.floor(own/5));
+  if(Object.keys(b.nodes).length<cap&&Math.random()<.6){const e=emptyTiles(k).filter(i=>!(k===view&&i===tileAt(P.x,P.z)));if(e.length){spawnNode(k,e[Math.floor(Math.random()*e.length)]);if(k===view)rebuildNodes()}}}}
+function remap9(b){if(!b.owned||b.owned.length!==81)return b;const mv=i=>(Math.floor(i/9)+3)*N+(i%9)+3;
+  const o=Array(N*N).fill(false),g=Array(N*N).fill(null),cl=[];b.owned.forEach((v,i)=>{o[mv(i)]=v});b.grid.forEach((v,i)=>{g[mv(i)]=v});(b.cloud||[]).forEach((v,i)=>{if(v)cl[mv(i)]=true});
+  const nd={};for(const i in (b.nodes||{}))nd[mv(+i)]=b.nodes[i];return{...b,owned:o,grid:g,cloud:cl,nodes:b.nodes?nd:undefined,me:b.me!=null?mv(b.me):undefined,size:9}}
+function migrate(k,b){if(b.owned)return remap9(b);const nb=makeBase(k);nb.nick=b.nick||'';
+  const old=(b.grid||[]).filter(Boolean),target=Math.max(9,(b.plots||4)+5);
+  const order=[...Array(N*N).keys()].filter(i=>i!==MID).sort((a,c)=>ring(a)-ring(c));
+  let own=9;for(const i of order){if(!nb.owned[i]){if(own>=Math.max(target,old.length+1))break;nb.owned[i]=true;own++}
+    if(old.length)nb.grid[i]=old.shift()}
+  return remap9({...nb,owned:nb.owned.filter((_,i)=>i<81).length===81&&nb.owned.length===81?nb.owned:nb.owned})}
+function newState(){return{res:{food:15,wood:15,stone:0,coins:0,pearls:0,gems:0,clouds:0,stardust:0,obsidian:0},bases:{home:makeBase('home')},main:'home',hero:{shirt:1,hair:0,skin:0},stamina:100,t:Date.now()}}
+function half(b){return((b.size||9)-1)/2}
+function inMap(i,h){const[r,c]=rc(i);return Math.abs(r-CC)<=h&&Math.abs(c-CC)<=h}
+function ownedN(b){return b.owned.filter(Boolean).length}
+function isFull(b){return ownedN(b)>=(b.size||9)**2}
+function mapCost(k){const b=state.bases[k],lvl=((b.size||9)-9)/2+1;return{coins:3000*BASES[k].tier*lvl,stone:1000*lvl}}
+function allMaxed(){return Object.keys(BASES).filter(k=>!BASES[k].secret).every(k=>state.bases[k]&&state.bases[k].maxed)}
+function canClaim(k,i){const b=state.bases[k];return inMap(i,half(b))&&!b.owned[i]&&nbrs(i).some(j=>b.owned[j])}
+function hsh(k,i){return (Math.imul(i+1,2654435761)^Math.imul(k.charCodeAt(0),40503))>>>0}
+function scen(k,i){const h=hsh(k,i);if(h%100>=34)return'';const L=BASES[k].scen;return L[(h>>>8)%L.length]}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200)}
+function count(k,b){return state.bases[k].grid.filter(x=>x===b).length}
+function costOf(k,b){const n=count(k,b),c={};for(const r in B[b].c)c[r]=Math.ceil(B[b].c[r]*Math.pow(1.2,n));return c}
+function landCost(k){const n=state.bases[k].owned.filter(Boolean).length;return{coins:Math.ceil(10*BASES[k].tier*Math.pow(1.08,Math.min(72,n-9)))}}
+function canPay(c){return Object.entries(c).every(([r,a])=>state.res[r]>=a)}
+function pay(c){for(const r in c)state.res[r]-=c[r]}
+function missing(c){return Object.entries(c).filter(([r,a])=>state.res[r]<a).map(([r,a])=>RES[r][1]).join(' and ')}
+function costHTML(c){return Object.entries(c).map(([r,a])=>`<span class="cost ${state.res[r]>=a?'':'no'}">${RES[r][0]} ${fmt(a)}</span>`).join('')}
+function title(k){return state.bases[k].nick||BASES[k].n}
+function esc(s){return s.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}
+const EAT=0.015;
+function totalPop(){let n=0;for(const k in state.bases)n+=state.bases[k].grid.reduce((a,x)=>a+(x?B[x].pop||0:0),0);return n}
+function status(k){
+  const b=state.bases[k],g=b.grid.filter(Boolean);
+  const conds=BASES[k].conds.map(c=>({c,sup:g.reduce((s,x)=>s+((B[x].g||{})[c]||0),0),dem:g.reduce((s,x)=>s+((B[x].u||{})[c]||0),0)}));
+  const ok=conds.every(x=>x.sup>=x.dem);
+  let statues=0;for(const bk in state.bases)statues+=count(bk,'statue');
+  const mult=1+g.reduce((s,x)=>s+(B[x].h||0),0)+(state.main===k?0.5:0)+0.25*statues;
+  const pop=g.reduce((a,x)=>a+(B[x].pop||0),0);
+  const jobs=b.grid.map((x,i)=>x&&B[x].m?i:-1).filter(i=>i>=0),staffed=jobs.slice(0,pop),idle=jobs.length-staffed.length;
+  const hungry=state.res.food<1&&totalPop()>0;
+  const prod={};if(ok)staffed.forEach(i=>{const x=b.grid[i];if(hungry&&!B[x].m.food)return;for(const r in B[x].m)prod[r]=(prod[r]||0)+B[x].m[r]*mult});
+  return{conds,ok,mult,prod,pop,staffed,idle,free:Math.max(0,pop-jobs.length),hungry};
+}
+function tick(dt){for(const k in state.bases){const s=status(k);for(const r in s.prod)state.res[r]+=s.prod[r]*dt}state.res.food=Math.max(0,state.res.food-totalPop()*EAT*dt)}
+function effects(b){const d=B[b],out=[];
+  for(const r in (d.m||{}))out.push(`makes ${rate(d.m[r])} ${RES[r][1]} a second`);
+  for(const c in (d.g||{}))out.push(`gives ${d.g[c]} ${COND[c][1]}`);
+  for(const c in (d.u||{}))out.push(`needs ${d.u[c]} ${COND[c][1]}`);
+  if(d.cloud)out.push('only on clouds');if(d.m)out.push('needs 1 worker');if(d.pop)out.push(`home for ${d.pop} people`);
+  if(d.h)out.push('makes this base 10% faster');if(d.sb)out.push('makes ALL your bases 25% faster');
+  return out.join(', ')}
+
+/* ---------- 3D ---------- */
+let R,scene,cam,hemi,sun,lantern,hl,world=null,hero=null,anims=[],workers=[],P={x:0,z:4,a:Math.PI},camYaw=0,camPitch=.42,lastT=0,moved=false,curAct=null;
+const joy={id:null,x0:0,y0:0,dx:0,dy:0},look={id:null,x:0,y:0},keys={};
+const GEOS={},MATS={},TEX={};
+const ENV={home:{sky:0x9fd8ff,fog:[45,95],hemi:.55,sun:.45},ocean:{sky:0x125a8c,fog:[12,50],hemi:.85,sun:.35,hc:0x9fdcff},
+  mine:{sky:0x140d08,fog:[10,34],hemi:.35,sun:.1},sky:{sky:0xcdeeff,fog:[45,110],hemi:.55,sun:.45},space:{sky:0x04030c,fog:null,hemi:.5,sun:.45},volcano:{sky:0x2a0a05,fog:[12,60],hemi:.6,sun:.3,hc:0xffb08a}};
+const GROUND={home:[0x8fcf62,0x4f9a45],ocean:[0xecd9a0,0x3d7090],mine:[0xcfae84,0x4a3a2c],sky:[0x9ee07c,0x8b6a45],space:[0x9098ad,0x222033],volcano:[0x4a3f3c,0xff5a1f]};
+const SH={farm:['field',0xe0c15a],lumber:['tower',0x8b5a2b],quarry:['tower',0x9a9a9a],market:['house',0xe25b4a],house:['house',0x5b8be2],statue:['statue',0xffd447],
+  pump:['tower',0x7fd3ff],kelp:['field',0x3fae5a],fish:['house',0xf08a3c],pearl:['tower',0xf3e6ff],shell:['house',0xff9ec7],
+  lamp:['lamp',0xffb347],shroom:['field',0xd9534f],drill:['tower',0x6d6d6d],gem:['tower',0x6fd0e8],cabin:['house',0x8b5a2b],
+  balloon:['balloon',0xff5d8f],garden:['field',0xffd447],windmill:['mill',0xf5f5f5],catcher:['tower',0xffffff],rainbow:['field',0xff7eb6],storm:['mill',0x6b7a8f],megacatch:['tower',0xd6ecff],nest:['house',0xc89b6d],
+  oxyfarm:['field',0x5fd08f],solar:['solar',0x2a4a9a],lab:['house',0xdfe6f0],dust:['tower',0xb48cff],pod:['house',0x9aa3b8],tower2:['statue',0x2b2b33],icetower:['tower',0xbfe9ff],pepper:['field',0xe63946],forge:['house',0x8a2c1a],obsdrill:['tower',0x2b2b33],bunker:['house',0xb5533c],hq:['hq',0xffd447]};
+
+function geo(key,make){return GEOS[key]||(GEOS[key]=make())}
+function mat(c){return MATS[c]||(MATS[c]=new THREE.MeshLambertMaterial({color:c}))}
+function darker(c){const r=(c>>16)&255,g=(c>>8)&255,b=c&255;return (Math.floor(r*.68)<<16)|(Math.floor(g*.68)<<8)|Math.floor(b*.68)}
+function box(w,h,d,c){return new THREE.Mesh(geo(`b${w},${h},${d}`,()=>new THREE.BoxGeometry(w,h,d)),mat(c))}
+function cyl(rt,rb,h,c,s=10){return new THREE.Mesh(geo(`c${rt},${rb},${h},${s}`,()=>new THREE.CylinderGeometry(rt,rb,h,s)),mat(c))}
+function cone(r,h,c,s=8){return new THREE.Mesh(geo(`k${r},${h},${s}`,()=>new THREE.ConeGeometry(r,h,s)),mat(c))}
+function ball(r,c,s=12){return new THREE.Mesh(geo(`s${r},${s}`,()=>new THREE.SphereGeometry(r,s,Math.max(6,s*.7|0))),mat(c))}
+function emojiTex(e){if(TEX[e])return TEX[e];const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  x.textAlign='center';x.textBaseline='middle';
+  if(e==='+'){x.font='bold 110px sans-serif';x.lineWidth=14;x.strokeStyle='rgba(0,0,0,.55)';x.strokeText('+',64,70);x.fillStyle='#fff';x.fillText('+',64,70)}
+  else{x.font='96px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.fillText(e,64,72)}
+  return TEX[e]=new THREE.CanvasTexture(c)}
+function sprite(e,s=1.3){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:emojiTex(e),transparent:true,depthWrite:false}));m.scale.set(s,s,1);return m}
+
+function init3D(){
+  if(R)return true;
+  if(!window.THREE){toast('The 3D part couldn’t load. Check the internet and try again.');return false}
+  R=new THREE.WebGLRenderer({canvas:document.getElementById('cv'),antialias:true});
+  R.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(62,1,.1,400);
+  hemi=new THREE.HemisphereLight(0xffffff,0x556655,.9);sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(12,24,8);
+  lantern=new THREE.PointLight(0xffd8a0,0,16);scene.add(hemi,sun,lantern);
+  hl=new THREE.Mesh(new THREE.BoxGeometry(T*.98,.08,T*.98),new THREE.MeshBasicMaterial({color:0xffd447,transparent:true,opacity:.45,depthWrite:false}));scene.add(hl);
+  resize();window.addEventListener('resize',resize);setupTouch();requestAnimationFrame(loop);return true}
+function resize(){if(!R)return;const w=window.innerWidth,h=window.innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<h?70:60;cam.updateProjectionMatrix();placeHud()}
+
+function makePerson(o){
+  const g=new THREE.Group(),u={};
+  const pants=o.pants??0x34495e;
+  for(const s of [-1,1]){const piv=new THREE.Group();piv.position.set(.17*s,.8,0);const l=box(.28,.78,.3,pants);l.position.y=-.39;piv.add(l);
+    const shoe=box(.3,.16,.4,0x222222);shoe.position.set(0,-.78,.05);piv.add(shoe);g.add(piv);u[s<0?'legL':'legR']=piv}
+  const body=box(.72,.78,.42,o.shirt);body.position.y=1.2;g.add(body);
+  for(const s of [-1,1]){const piv=new THREE.Group();piv.position.set(.48*s,1.52,0);const a=box(.22,.66,.24,o.shirt);a.position.y=-.3;piv.add(a);
+    const h=box(.2,.16,.2,o.skin);h.position.y=-.68;piv.add(h);g.add(piv);u[s<0?'armL':'armR']=piv}
+  const head=ball(.34,o.skin,14);head.position.y=1.92;g.add(head);
+  const hair=new THREE.Mesh(geo('hair',()=>new THREE.SphereGeometry(.36,14,8,0,Math.PI*2,0,Math.PI*.55)),mat(o.hair));hair.position.set(0,1.95,-.03);g.add(hair);
+  for(const s of [-1,1]){const e=ball(.055,0x111111,6);e.position.set(.12*s,1.95,.3);g.add(e)}
+  const m=box(.14,.04,.02,0xb5483f);m.position.set(0,1.8,.33);g.add(m);
+  if(o.gear==='bubble'){const b=new THREE.Mesh(geo('bub',()=>new THREE.SphereGeometry(.56,16,12)),o._bm||(MATS.bubble=MATS.bubble||new THREE.MeshLambertMaterial({color:0xbfeaff,transparent:true,opacity:.32,depthWrite:false})));b.position.y=1.92;g.add(b);
+    const tank=box(.4,.55,.18,0xcfd6df);tank.position.set(0,1.25,-.3);g.add(tank)}
+  if(o.gear==='hat'){const h=new THREE.Mesh(geo('hat',()=>new THREE.SphereGeometry(.4,14,8,0,Math.PI*2,0,Math.PI/2)),mat(0xf4c430));h.position.y=2.03;g.add(h);
+    const lt=new THREE.Mesh(geo('lt',()=>new THREE.SphereGeometry(.09,8,6)),MATS.glow||(MATS.glow=new THREE.MeshBasicMaterial({color:0xfff3b0})));lt.position.set(0,2.2,.34);g.add(lt)}
+  g.userData=u;return g}
+function animPerson(g,t,moving){const u=g.userData,s=moving?Math.sin(t*11)*.75:0;u.legL.rotation.x=s;u.legR.rotation.x=-s;u.armL.rotation.x=-s*.8;u.armR.rotation.x=s*.8}
+
+function buildingModel(key){
+  const g=new THREE.Group();const [sh,c]=SH[key.startsWith('hq_')?'hq':key]||['house',0xcccccc];let top=2;
+  if(sh==='field'){const p=box(3.2,.25,3.2,key==='kelp'?0xd8c58a:0x7a5230);p.position.y=.12;g.add(p);
+    for(let i=0;i<9;i++){const s=cone(.3,1,c,6);s.position.set(((i%3)-1)*1,.75,(Math.floor(i/3)-1)*1);g.add(s);anims.push(t=>{s.rotation.z=Math.sin(t*2+i)*.08})}
+    const sign=cyl(.06,.06,1.2,0x6b4a2b,6);sign.position.set(1.4,.6,1.4);g.add(sign);top=1.4}
+  else if(sh==='house'||sh==='hq'){const w=sh==='hq'?2.8:2.4,h=sh==='hq'?2.2:1.7;const b=box(w,h,w,c);b.position.y=h/2;g.add(b);
+    const r=cone(w*.82,1.3,darker(c),4);r.position.y=h+.65;r.rotation.y=Math.PI/4;g.add(r);
+    const d=box(.6,1,.06,0x5a3a20);d.position.set(0,.5,w/2+.02);g.add(d);
+    for(const s of [-1,1]){const wi=box(.45,.45,.06,0xbfe6ff);wi.position.set(.75*s,h*.62,w/2+.02);g.add(wi)}top=h+1.4}
+  else if(sh==='tower'){const b=cyl(.9,1.1,2.4,c);b.position.y=1.2;g.add(b);const r=cone(1.15,1,darker(c),10);r.position.y=2.9;g.add(r);
+    const d=box(.5,.9,.06,0x5a3a20);d.position.set(0,.45,1.06);g.add(d);top=3.5}
+  else if(sh==='lamp'){const p=cyl(.1,.14,2.6,0x333333,6);p.position.y=1.3;g.add(p);
+    const l=new THREE.Mesh(geo('lampg',()=>new THREE.SphereGeometry(.42,12,8)),MATS.lampglow||(MATS.lampglow=new THREE.MeshBasicMaterial({color:0xffc861})));l.position.y=2.85;g.add(l);
+    const pl=new THREE.PointLight(0xffc070,.9,9);pl.position.y=2.6;g.add(pl);top=3.3}
+  else if(sh==='balloon'){const bk=box(1.1,.6,1.1,0x8b5a2b);bk.position.y=.3;g.add(bk);const st=cyl(.03,.03,2.2,0x444444,4);st.position.y=1.7;g.add(st);
+    const bl=ball(1.3,c,16);bl.position.y=3.6;g.add(bl);anims.push(t=>{bl.position.y=3.6+Math.sin(t*1.5)*.15});top=5}
+  else if(sh==='mill'){const b=cyl(.8,1.1,3,c);b.position.y=1.5;g.add(b);const hub=new THREE.Group();hub.position.set(0,2.8,.9);
+    for(let i=0;i<4;i++){const bl=box(.3,1.8,.06,0xc89b6d);bl.position.y=.9;const a=new THREE.Group();a.rotation.z=i*Math.PI/2;a.add(bl);hub.add(a)}
+    g.add(hub);anims.push(t=>{hub.rotation.z=t*1.8});top=4}
+  else if(sh==='solar'){for(const s of [-1,1]){const l=cyl(.08,.08,1,0x777777,6);l.position.set(1.1*s,.5,0);g.add(l)}
+    const p=box(3,.12,2,c);p.position.y=1.1;p.rotation.x=-.45;g.add(p);top=2}
+  else if(sh==='statue'){const p=cyl(1,1.2,1,0xbdbdbd);p.position.y=.5;g.add(p);const s=cone(.7,2,c,5);s.position.y=2;g.add(s);
+    const st=ball(.4,c,10);st.position.y=3.2;g.add(st);anims.push(t=>{st.rotation.y=t});top=3.6}
+  const sp=sprite(B[key].e,1.3);sp.position.y=top+.75;g.add(sp);return g}
+
+let actLock=0,nodeGroup=null,nodeMeshes={},shakeT={},swingT=0,fx=[];
+function nodeModel(t){const g=new THREE.Group();
+  if(t==='tree'){const tr=cyl(.25,.32,1.2,0x6b4a2b,7);tr.position.y=.6;g.add(tr);for(let j=0;j<3;j++){const c=cone(1.15-j*.3,1.3,0x2f8a3e,8);c.position.y=1.5+j*.75;g.add(c)}}
+  else if(t==='rock'||t==='meteor'){const r=new THREE.Mesh(geo('rock',()=>new THREE.DodecahedronGeometry(.8,0)),mat(t==='meteor'?0x5a5068:0x8f8f8f));r.scale.set(1.2,.9,1.1);r.position.y=.6;g.add(r);
+    const r2=new THREE.Mesh(geo('rock',()=>new THREE.DodecahedronGeometry(.8,0)),mat(t==='meteor'?0x6f6480:0xa3a3a3));r2.scale.setScalar(.55);r2.position.set(.7,.35,.3);g.add(r2)}
+  else if(t==='bush'){const b=ball(.95,0x3a9a46,10);b.position.y=.8;b.scale.y=.8;g.add(b);for(let j=0;j<6;j++){const a=j/6*Math.PI*2,ap=ball(.17,0xe63946,6);ap.position.set(Math.cos(a)*.8,.8+(j%2)*.35,Math.sin(a)*.8);g.add(ap)}}
+  else if(t==='weed'){for(let j=0;j<5;j++){const c=cone(.18,1.6+j%3*.4,0x2e9e5b,5);c.position.set((j-2)*.3,.8,(j%2)*.3);g.add(c);anims.push(tt=>{c.rotation.z=Math.sin(tt*1.5+j)*.15})}}
+  else if(t==='shroom'){for(let j=0;j<3;j++){const st=cyl(.12,.15,.6,0xf5ecd7,6);st.position.set((j-1)*.6,.3,(j%2)*.4);g.add(st);
+    const cp=new THREE.Mesh(geo('cap',()=>new THREE.SphereGeometry(.4,10,6,0,Math.PI*2,0,Math.PI/2)),mat(0xd9534f));cp.position.set((j-1)*.6,.58,(j%2)*.4);g.add(cp)}}
+  return g}
+function rebuildNodes(){if(!world)return;if(nodeGroup)world.remove(nodeGroup);nodeGroup=new THREE.Group();nodeMeshes={};world.add(nodeGroup);
+  const b=state.bases[view];seedNodes(view);for(const i in b.nodes){const[r,c]=rc(+i),m=nodeModel(b.nodes[i].t);m.position.set((c-CC)*T,0,(r-CC)*T);nodeGroup.add(m);nodeMeshes[i]=m}curAct=null;if(NET.role==='host')netBroadcast({t:'nodes',nodes:b.nodes})}
+function popFx(i,text){const[r,c]=rc(i),s=sprite(text,1);s.position.set((c-CC)*T,2.4,(r-CC)*T);world.add(s);fx.push({s,life:1})}
+function doHit(i){const b=state.bases[view],nd=b.nodes[i];if(!nd)return;
+  if(NET.role==='guest'){if(state.stamina<HITCOST){toast('You’re too tired! Rest a bit.');return}state.stamina-=HITCOST;swingT=.3;shakeT[i]=.3;popFx(i,RES[NODE[nd.t].res][0]);
+    const[r,c]=rc(i);P.a=Math.atan2((c-CC)*T-P.x,(r-CC)*T-P.z);netSend(NET.host,{t:'hit',i});renderTop();return}
+  if(state.stamina<HITCOST){toast('You’re too tired! Rest a bit, or eat a 🍎 snack.');return}
+  const d=NODE[nd.t];state.stamina-=HITCOST;nd.hp--;state.res[d.res]+=HITGAIN;swingT=.3;shakeT[i]=.3;popFx(i,RES[d.res][0]);
+  const[r,c]=rc(i);P.a=Math.atan2((c-CC)*T-P.x,(r-CC)*T-P.z);
+  if(nd.hp<=0){actLock=Date.now()+700;delete b.nodes[i];setTimeout(()=>{if(state)rebuildNodes()},250)}else if(NET.role==='host')netBroadcast({t:'nodes',nodes:b.nodes,hit:i});
+  renderTop()}
+function addOwned(k,x,z,i){const [gc]=GROUND[k];
+  if(k==='sky'&&(state.bases[k].cloud||[])[i]){for(let j=0;j<5;j++){const a=j/4*Math.PI*2+i,r=1+((i+j)%3)*.15,p=ball(r,0xffeaf6,10),o=j?.95:0;p.position.set(x+Math.cos(a)*o,-r+.15,z+Math.sin(a)*o);world.add(p)}return}
+  if(k==='sky'){const t=box(T*.98,.5,T*.98,gc);t.position.set(x,-.25,z);world.add(t);const d=box(T*.9,2.4,T*.9,0x8b6a45);d.position.set(x,-1.7,z);world.add(d)}
+  else if(k==='space'){const t=box(T*.98,.4,T*.98,gc);t.position.set(x,-.2,z);world.add(t);const d=box(T*.6,.6,T*.6,0x5c6378);d.position.set(x,-.6,z);world.add(d)}
+  else{const t=box(T*.98,1,T*.98,gc);t.position.set(x,-.5,z);world.add(t)}}
+function addWild(k,x,z,i){const [,wc]=GROUND[k],h=hsh(k,i),e=scen(k,i),ox=((h>>>12)%100/100-.5)*1.6,oz=((h>>>20)%100/100-.5)*1.6;
+  if(k==='home'||k==='ocean'){const t=box(T,1,T,wc);t.position.set(x,-.62,z);world.add(t)}
+  if(k==='volcano'){const t=new THREE.Mesh(geo(`b${T},1,${T}`,()=>new THREE.BoxGeometry(T,1,T)),MATS.lava||(MATS.lava=new THREE.MeshBasicMaterial({color:0xff5a1f})));t.position.set(x,-.75,z);world.add(t);
+    if((h&3)===0){const b2=new THREE.Mesh(geo('lavab',()=>new THREE.SphereGeometry(.35,8,6)),MATS.lava2||(MATS.lava2=new THREE.MeshBasicMaterial({color:0xffc04a})));world.add(b2);anims.push(tt=>{const q=(tt*.7+i*.37)%1;b2.position.set(x+ox*.5,-.3+Math.sin(q*Math.PI)*.6,z+oz*.5);b2.scale.setScalar(1-q*.6)})}}
+  if(k==='mine'){const t=box(T,WALL,T,(h&1)?wc:0x55432f);t.position.set(x,WALL/2,z);world.add(t)}
+  if(k==='sky'){for(let j=0;j<3;j++){const p=ball(1.2+j*.25,0xffffff,10);p.position.set(x+(j-1)*1.1+ox*.4,-1.6-j*.2,z+oz*.5);world.add(p)}}
+  if(!e)return;
+  const X=x+ox,Z=z+oz;
+  if(e==='🌲'){const tr=cyl(.2,.25,1,0x6b4a2b,6);tr.position.set(X,.4,Z);world.add(tr);for(let j=0;j<2;j++){const c=cone(1.1-j*.3,1.6,0x2f7a3a,7);c.position.set(X,1.5+j*.9,Z);world.add(c)}}
+  else if(e==='🌳'){const tr=cyl(.22,.28,1.4,0x6b4a2b,6);tr.position.set(X,.6,Z);world.add(tr);const c=ball(1.2,0x3f9a4a,10);c.position.set(X,2.1,Z);world.add(c)}
+  else if(e==='🌼'){for(let j=0;j<4;j++){const f=ball(.16,j%2?0xffffff:0xffd447,6);f.position.set(X+(j%2-.5)*.7,.12,Z+(j>1?.4:-.4));world.add(f)}}
+  else if(e==='🪨'||e==='⛰️'){const r=new THREE.Mesh(geo('rock',()=>new THREE.DodecahedronGeometry(.8,0)),mat(k==='mine'?0x6b5a48:0x8c8c8c));
+    r.scale.setScalar(e==='⛰️'?1.6:1);r.position.set(X,(k==='mine'?WALL:0)+.3,Z);r.rotation.set(h%3,h%5,0);world.add(r)}
+  else if(e==='🪸'){for(let j=0;j<3;j++){const c=cone(.25,1.2+j*.3,[0xff6f91,0xff9f43,0xb388ff][j],6);c.position.set(X+(j-1)*.45,.5,Z+(j%2)*.3);world.add(c)}}
+  else if(e==='☁️'){for(let j=0;j<3;j++){const p=ball(.8,0xffffff,10);p.position.set(X+(j-1)*.9,1.5+((h>>j)&1)*.3,Z);world.add(p)}}
+  else{const s=sprite(e,k==='space'?1.6:1.2),y0=k==='mine'?WALL+1.4:k==='space'?-1+(h%40)/10:1.6+(h%20)/10;s.position.set(X,y0,Z);world.add(s);
+    anims.push(t=>{s.position.y=y0+Math.sin(t*1.3+i)*.3;if(e==='🐟'||e==='🐠')s.position.x=X+Math.sin(t*.6+i)*1.2})}}
+function extras(k){
+  if(k==='home'||k==='sky'){const s=sprite('☀️',16);s.position.set(40,45,-70);world.add(s)}
+  if(k==='volcano'){for(let j=0;j<14;j++){const s=sprite('🔥',.6),bx=(Math.random()-.5)*40,bz=(Math.random()-.5)*40,sp=.8+Math.random();s.position.set(bx,0,bz);world.add(s);anims.push(t=>{s.position.y=((t*sp+j*1.3)%8)})}}
+  if(k==='ocean'){for(let j=0;j<16;j++){const s=sprite('🫧',.7),bx=(Math.random()-.5)*36,bz=(Math.random()-.5)*36,sp=.6+Math.random();s.position.set(bx,0,bz);world.add(s);
+    anims.push(t=>{s.position.y=((t*sp+j*1.7)%9)})}
+    const surf=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshBasicMaterial({color:0x5fb0e8,transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false}));surf.rotation.x=Math.PI/2;surf.position.y=14;world.add(surf)}
+  if(k==='space'){const pts=new Float32Array(1800);for(let j=0;j<600;j++){const th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*2-1),r=150;
+      pts[j*3]=r*Math.sin(ph)*Math.cos(th);pts[j*3+1]=r*Math.cos(ph);pts[j*3+2]=r*Math.sin(ph)*Math.sin(th)}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pts,3));world.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:1.2,sizeAttenuation:false})));
+    const pl=sprite('🪐',22);pl.position.set(-50,25,-80);world.add(pl);const ea=sprite('🌍',14);ea.position.set(60,-20,-50);world.add(ea)}
+  if(k==='mine'){const ceil=new THREE.Mesh(new THREE.PlaneGeometry(200,200),mat(0x1e140c));ceil.rotation.x=Math.PI/2;ceil.position.y=9;ceil.material.side=THREE.DoubleSide;world.add(ceil)}}
+
+function randSpot(i){const[r,c]=rc(i),a=Math.random()*Math.PI*2;return[(c-CC)*T+Math.cos(a)*1.85,(r-CC)*T+Math.sin(a)*1.85]}
+function spawnWorkers(k){const b=state.bases[k],st=status(k),own=b.owned.map((o,i)=>o?i:-1).filter(i=>i>=0);
+  for(let j=0;j<Math.min(12,st.pop);j++){const g=makePerson({shirt:SHIRTS[(j*3+2)%8],hair:HAIRS[(j*5+1)%8],skin:SKINS[(j*2+1)%6],pants:[0x3b5ba5,0x5a4636,0x2f2f2f][j%3],gear:GEAR[k]});
+    g.scale.setScalar(.9);const t=st.staffed[j]??own[Math.floor(Math.random()*own.length)],[x,z]=randSpot(t);g.position.set(x,0,z);world.add(g);
+    const job=st.staffed[j];
+    workers.push({g,x,z,tx:x,tz:z,tile:t,wait:Math.random()*2,job,node:null,hitT:2+Math.random()*2,
+      ...(job!=null?(()=>{const[r,c]=rc(job);return{tx:(c-CC)*T,tz:(r-CC)*T+2.05,wait:0}})():{})})}}
+function helperThink(w,dt){const b=state.bases[view];
+  if(w.node!=null&&!b.nodes[w.node])w.node=null;
+  if(w.node==null){let best=null,bd=1e9;for(const i in b.nodes){const n=workers.filter(o=>o!==w&&o.node===+i).length;if(n>=2)continue;
+      const[r,c]=rc(+i),d=Math.hypot((c-CC)*T-w.x,(r-CC)*T-w.z)+n*6;if(d<bd){bd=d;best=+i}}
+    if(best==null)return false;w.node=best;const[r,c]=rc(best),cx=(c-CC)*T,cz=(r-CC)*T,a=Math.atan2(w.x-cx,w.z-cz);w.tx=cx+Math.sin(a)*1.6;w.tz=cz+Math.cos(a)*1.6;w.wait=0}
+  const d=Math.hypot(w.tx-w.x,w.tz-w.z);
+  if(d>.1){const s=Math.min(d,1.6*dt);w.x+=(w.tx-w.x)/d*s;w.z+=(w.tz-w.z)/d*s;w.g.rotation.y=Math.atan2(w.tx-w.x,w.tz-w.z);w.moving=true;return true}
+  w.moving=false;const[r,c]=rc(w.node);w.g.rotation.y=Math.atan2((c-CC)*T-w.x,(r-CC)*T-w.z);w.working=true;
+  if(status(view).hungry||NET.role==='guest')return true;
+  w.hitT-=dt;if(w.hitT<=0){w.hitT=6;const nd=b.nodes[w.node],dd=NODE[nd.t];nd.hp--;state.res[dd.res]+=1;shakeT[w.node]=.3;popFx(w.node,RES[dd.res][0]);
+    if(nd.hp<=0){delete b.nodes[w.node];w.node=null;setTimeout(()=>{if(state)rebuildNodes()},250)}else if(NET.role==='host')netBroadcast({t:'nodes',nodes:b.nodes,hit:w.node})}
+  return true}
+function clearWorld(){if(!world)return;nodeGroup=null;nodeMeshes={};fx=[];scene.remove(world);world.traverse(o=>{if(o.isSprite)o.material.dispose();if(o.isPoints){o.geometry.dispose()}});world=null;anims=[];workers=[]}
+function buildWorld(){
+  if(!R||!state||!state.bases[view])return;clearWorld();
+  const k=view,b=state.bases[k],E=ENV[k],stf=new Set(status(k).staffed);world=new THREE.Group();scene.add(world);
+  scene.background=new THREE.Color(E.sky);scene.fog=E.fog?new THREE.Fog(E.sky,E.fog[0],E.fog[1]):null;
+  hemi.intensity=E.hemi;hemi.color.set(E.hc||0xffffff);sun.intensity=E.sun;lantern.intensity=k==='mine'?1.4:0;
+  document.getElementById('game').style.background='#'+E.sky.toString(16).padStart(6,'0');
+  const hm=half(b);
+  for(let i=0;i<N*N;i++){if(!inMap(i,hm+1))continue;const[r,c]=rc(i),x=(c-CC)*T,z=(r-CC)*T;
+    if(b.owned[i])addOwned(k,x,z,i);else addWild(k,x,z,i);
+    if(b.owned[i]&&b.grid[i]){const m=buildingModel(b.grid[i]);m.position.set(x,0,z);world.add(m);
+      if(B[b.grid[i]].m&&!stf.has(i)){const zz=sprite('💤',1.1);zz.position.set(x+1,2.6,z);world.add(zz);anims.push(t=>{zz.position.y=2.6+Math.sin(t*2+i)*.2})}}
+    if(canClaim(k,i)){const s=sprite('+',1.3),y0=(k==='mine'?WALL:0)+1.1;s.position.set(x,y0,z);world.add(s);anims.push(t=>{s.position.y=y0+Math.sin(t*3+i)*.15})}}
+  extras(k);
+  hero=makePerson({shirt:SHIRTS[state.hero.shirt],hair:HAIRS[state.hero.hair],skin:SKINS[state.hero.skin],gear:GEAR[k]});world.add(hero);
+  spawnWorkers(k);rebuildNodes();hero.position.set(P.x,0,P.z);curAct=null;for(const id in NET.remotes)NET.remotes[id].g=null;emoteFx=[];if(NET.role==='host')netBroadcast(worldMsg())}
+
+function tileAt(x,z){const c=Math.round(x/T)+CC,r=Math.round(z/T)+CC;if(c<0||r<0||c>=N||r>=N)return -1;return r*N+c}
+function walkable(x,z){const b=state.bases[view];
+  for(const [dx,dz] of [[-.35,-.35],[.35,-.35],[-.35,.35],[.35,.35]]){const t=tileAt(x+dx,z+dz);if(t<0||!b.owned[t])return false}
+  const t=tileAt(x,z),k=b.grid[t];if(b.nodes&&b.nodes[t]){const[r,c]=rc(t);if(Math.hypot(x-(c-CC)*T,z-(r-CC)*T)<1.25)return false}if(k){const[r,c]=rc(t);if(Math.hypot(x-(c-CC)*T,z-(r-CC)*T)<1.75)return false}return true}
+function placeHero(pref){const b=state.bases[view],order=[pref,...b.owned.map((o,i)=>o?i:-1).filter(i=>i>=0&&i!==pref)];
+  for(const t of order){if(t<0||!b.owned[t])continue;const[r,c]=rc(t),x=(c-CC)*T,z=(r-CC)*T;
+    for(const [dx,dz] of [[0,0],[0,1.9],[1.9,0],[-1.9,0],[0,-1.9],[1.9,1.9],[-1.9,1.9]])if(walkable(x+dx,z+dz)){P.x=x+dx;P.z=z+dz;if(hero)hero.position.set(P.x,0,P.z);return}}}
+function lerpA(a,b,t){let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*t}
+
+function setupTouch(){
+  const tz=document.getElementById('touch'),jy=document.getElementById('joy'),kn=jy.firstChild;
+  tz.addEventListener('pointerdown',e=>{e.preventDefault();try{window.focus()}catch(_){}
+    if(e.clientX<window.innerWidth*.5&&joy.id==null){joy.id=e.pointerId;joy.x0=e.clientX;joy.y0=e.clientY;joy.dx=joy.dy=0;jy.style.left=e.clientX+'px';jy.style.top=e.clientY+'px';jy.style.display='block';kn.style.transform=''}
+    else if(look.id==null){look.id=e.pointerId;look.x=e.clientX;look.y=e.clientY}
+    try{tz.setPointerCapture(e.pointerId)}catch(_){}});
+  tz.addEventListener('pointermove',e=>{
+    if(e.pointerId===joy.id){let dx=e.clientX-joy.x0,dy=e.clientY-joy.y0;const l=Math.hypot(dx,dy),m=55;if(l>m){dx*=m/l;dy*=m/l}joy.dx=dx/m;joy.dy=dy/m;kn.style.transform=`translate(${dx}px,${dy}px)`}
+    else if(e.pointerId===look.id){camYaw-=(e.clientX-look.x)*.008;camPitch=Math.max(.12,Math.min(1.1,camPitch+(e.clientY-look.y)*.004));look.x=e.clientX;look.y=e.clientY}});
+  const end=e=>{if(e.pointerId===joy.id){joy.id=null;joy.dx=joy.dy=0;jy.style.display='none'}if(e.pointerId===look.id)look.id=null};
+  tz.addEventListener('pointerup',end);tz.addEventListener('pointercancel',end);
+  window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const k=e.key.toLowerCase();
+    if(k==='escape'&&sheet!=null){sheet=null;renaming=false;renderSheet();return}
+    if((k==='e'||k===' '||k==='enter')&&!e.repeat&&sheet==null&&state){e.preventDefault();const bt=document.getElementById('act');act('act',bt.dataset.v||'');return}
+    if(k.startsWith('arrow')||k===' ')e.preventDefault();keys[k]=true});
+  window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+  window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;joy.id=null;joy.dx=joy.dy=0;jy.style.display='none'});
+}
+function loop(now){
+  requestAnimationFrame(loop);
+  if(!state||!world||!hero)return;
+  const t=now/1000,dt=Math.min(.05,lastT?t-lastT:0);lastT=t;
+  let ix=joy.dx,iy=joy.dy;
+  if(keys.w||keys.arrowup)iy=-1;if(keys.s||keys.arrowdown)iy=1;if(keys.a)ix=-1;if(keys.d)ix=1;
+  if(keys.arrowleft)camYaw+=dt*2;if(keys.arrowright)camYaw-=dt*2;
+  const len=Math.min(1,Math.hypot(ix,iy)),moving=len>.15&&sheet==null;
+  if(moving){const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=-Math.sin(camYaw);
+    let mx=fx*-iy+rx*ix,mz=fz*-iy+rz*ix;const l=Math.hypot(mx,mz);mx/=l;mz/=l;
+    const sp=5*len,nx=P.x+mx*sp*dt,nz=P.z+mz*sp*dt;if(walkable(nx,P.z))P.x=nx;if(walkable(P.x,nz))P.z=nz;
+    P.a=lerpA(P.a,Math.atan2(mx,mz),Math.min(1,dt*12));
+    if(!moved){moved=true;document.getElementById('hint').style.display='none'}}
+  hero.position.set(P.x,0,P.z);hero.rotation.y=P.a;animPerson(hero,t,moving);
+  for(const w of workers){w.working=false;w.moving=false;
+    if(w.job!=null){const d=Math.hypot(w.tx-w.x,w.tz-w.z);if(d>.1){const s=Math.min(d,1.6*dt);w.x+=(w.tx-w.x)/d*s;w.z+=(w.tz-w.z)/d*s;w.g.rotation.y=Math.atan2(w.tx-w.x,w.tz-w.z);w.moving=true}else{w.g.rotation.y=Math.PI;w.working=true}}
+    else if(!helperThink(w,dt)){
+      if(w.wait>0)w.wait-=dt;
+      else{const dx=w.tx-w.x,dz=w.tz-w.z,d=Math.hypot(dx,dz);
+        if(d<.1){w.wait=1+Math.random()*3;const b=state.bases[view],o=[w.tile,...nbrs(w.tile).filter(j=>b.owned[j])];w.tile=o[Math.floor(Math.random()*o.length)];[w.tx,w.tz]=randSpot(w.tile)}
+        else{const s=Math.min(d,1.6*dt);w.x+=dx/d*s;w.z+=dz/d*s;w.g.rotation.y=Math.atan2(dx,dz);w.moving=true}}}
+    w.g.position.set(w.x,0,w.z);animPerson(w.g,t+(w.tile||0),w.moving);
+    if(w.working)w.g.userData.armR.rotation.x=-1.6*Math.abs(Math.sin(t*3+w.x))}
+  for(const f of anims)f(t);
+  if(swingT>0){swingT-=dt;hero.userData.armR.rotation.x=-2.2*Math.sin((1-swingT/.3)*Math.PI)}
+  for(const i in shakeT){const m=nodeMeshes[i];shakeT[i]-=dt;if(m)m.rotation.z=shakeT[i]>0?Math.sin(shakeT[i]*60)*.08:0;if(shakeT[i]<=0)delete shakeT[i]}
+  fx=fx.filter(f=>{f.life-=dt;f.s.position.y+=dt*1.5;f.s.material.opacity=Math.max(0,f.life);if(f.life<=0){world.remove(f.s);f.s.material.dispose();return false}return true});
+  lantern.position.set(P.x,3,P.z);
+  const D=6.5,tx=P.x+Math.sin(camYaw)*Math.cos(camPitch)*D,tz=P.z+Math.cos(camYaw)*Math.cos(camPitch)*D,ty=1.4+Math.sin(camPitch)*D;
+  cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*8);cam.position.y+=(ty-cam.position.y)*Math.min(1,dt*8);cam.position.z+=(tz-cam.position.z)*Math.min(1,dt*8);
+  if(view==='mine')cam.position.y=Math.min(cam.position.y,8.5);
+  cam.lookAt(P.x,1.4,P.z);
+  netFrame(t,dt,moving);updateAct();R.render(scene,cam)}
+function updateAct(){
+  const b=state.bases[view],ci=tileAt(P.x,P.z),fi=tileAt(P.x+Math.sin(P.a)*2.6,P.z+Math.cos(P.a)*2.6);let a=null;
+  if(fi>=0&&fi!==ci&&!b.owned[fi]&&canClaim(view,fi))a=['buy',fi];
+  else if(fi>=0&&b.owned[fi]&&b.nodes&&b.nodes[fi])a=['hit',fi];
+  else if(ci>=0&&b.nodes&&b.nodes[ci])a=['hit',ci];
+  else if(fi>=0&&b.owned[fi]&&b.grid[fi])a=['look',fi];
+  else if(ci>=0&&b.owned[ci]&&b.grid[ci])a=['look',ci];
+  else if(ci>=0&&b.owned[ci])a=['build',ci];
+  const btn=document.getElementById('act');
+  const label=!a?'':a[0]==='hit'?`${NODE[b.nodes[a[1]].t].e} ${NODE[b.nodes[a[1]].t].n}<br><small>💪 −${HITCOST}</small>`:a[0]==='buy'?`🚩 Buy land<br><small>🪙 ${fmt(landCost(view).coins)}</small>`:a[0]==='look'?`${B[b.grid[a[1]]].e} ${B[b.grid[a[1]]].n}`:(b.cloud||[])[a[1]]?'☁️ Cloud':'🔨 Build here';
+  const key=a?a.join(':')+label:'';
+  if(key!==curAct){curAct=key;btn.innerHTML=label;btn.style.display=a?'':'none';btn.dataset.v=a?a[1]:'';btn.dataset.t=a?a[0]:''}
+  if(a){const[r,c]=rc(a[1]);hl.visible=true;hl.position.set((c-CC)*T,(a[0]==='buy'&&view==='mine')?WALL+.05:a[0]==='buy'&&view==='sky'?-.6:.05,(r-CC)*T)}else hl.visible=false}
+
+
+/* ---------- online friends (same rules as Be a Pet) ---------- */
+const ADJ=['Sparky','Fluffy','Brave','Zippy','Sunny','Cosmic','Happy','Mighty','Sneaky','Bouncy','Jolly','Speedy','Lucky','Fuzzy','Silly','Turbo','Crispy','Shiny','Snowy','Rocket','Wiggly','Giggly','Super','Tiny','Mega','Dizzy','Sleepy','Spicy','Golden','Ninja','Frosty','Stormy','Thunder','Pixel','Laser','Hyper','Ultra','Mini','Jumbo','Wacky','Zany','Funky','Groovy','Snappy','Peppy','Cozy','Chilly','Toasty','Breezy','Misty','Starry','Lunar','Solar','Glitter','Sparkle','Bubbly','Fizzy','Crunchy','Sugar','Honey','Maple','Minty','Cherry','Lemon','Mango','Berry','Coco','Rusty','Silver','Ruby','Jade','Neon','Electric','Atomic','Galaxy','Rainbow','Velvet','Fancy','Royal','Wild','Swift','Quick','Clever','Wise','Bold','Epic','Noble','Merry','Cheeky','Chunky','Chubby','Bashful','Dreamy','Mystic','Magic','Secret','Hidden','Brainy','Daring','Dapper'],NOUN=['Dragon','Otter','Panda','Tiger','Penguin','Fox','Koala','Bunny','Shark','Owl','Falcon','Unicorn','Moose','Dino','Gecko','Narwhal','Puppy','Kitty','Hedgehog','Llama','Dude','Taco','Pickle','Muffin','Comet','Pirate','Wizard','Biscuit','Noodle','Sloth','Badger','Beaver','Bison','Camel','Cheetah','Cobra','Coyote','Crab','Dolphin','Donkey','Eagle','Ferret','Flamingo','Frog','Gator','Giraffe','Goose','Gorilla','Hamster','Hawk','Hippo','Hyena','Jaguar','Kiwi','Lemur','Leopard','Lion','Lizard','Lobster','Lynx','Mantis','Meerkat','Mole','Monkey','Octopus','Orca','Parrot','Pelican','Pony','Puffin','Quokka','Rabbit','Raccoon','Raven','Rhino','Robin','Salmon','Seal','Squid','Swan','Toucan','Turtle','Walrus','Wombat','Yak','Zebra','Waffle','Pancake','Nugget','Donut','Cookie','Cupcake','Pretzel','Nacho','Burrito','Bagel','Knight','Robot','Meteor','Planet','Cactus','Acorn','Pebble','Blizzard','Volcano','Tornado','Captain','Ranger','Hero','Champ','Buddy','Pal','Builder','Miner','Lumberjack','Explorer','Digger'];
+const NET={peer:null,me:null,status:'off',role:null,host:null,hostName:'',guests:{},pend:null,remotes:{},sendT:0,look:{shirt:1,hair:0,skin:0},wname:''};
+const pickW=a=>a[Math.floor(Math.random()*a.length)];
+const randName=()=>pickW(ADJ)+pickW(NOUN);
+const okName=n=>/^[A-Za-z][A-Za-z0-9]{2,15}$/.test(n);
+const peerId=n=>'baseexp-'+n.toLowerCase();
+const EMOTES=['👋 Hi!','❤️','😂','Follow me!','Help me chop! 🪓','Look! 👀','Nice base! 🏠'];
+let peerLoad=null;
+function loadPeer(){if(window.Peer)return Promise.resolve();if(peerLoad)return peerLoad;
+  const urls=['https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
+  peerLoad=new Promise((res,rej)=>{let i=0;const next=()=>{if(i>=urls.length){rej();return}const sc=document.createElement('script');sc.src=urls[i++];sc.onload=()=>window.Peer?res():next();sc.onerror=next;document.head.appendChild(sc)};next()});
+  return peerLoad}
+function netStart(name,userPicked){
+  loadPeer().then(()=>{
+    const old=NET.peer;NET.peer=null;if(old){try{old.destroy()}catch(e){}}
+    NET.status='connecting';updNetUI();
+    let peer;try{peer=new Peer(peerId(name),window.PEEROPTS||{debug:0})}catch(e){NET.status='blocked';updNetUI();return}
+    NET.peer=peer;
+    peer.on('open',()=>{if(NET.peer!==peer)return;NET.me=name;NET.status='online';try{localStorage.setItem('bx-username',name)}catch(e){}updNetUI()});
+    peer.on('error',e=>{if(NET.peer!==peer)return;
+      if(e.type==='unavailable-id'){if(userPicked){toast('😕 Someone online is already '+name+'. Pick another!');netStart(NET.me&&NET.me.toLowerCase()!==name.toLowerCase()?NET.me:randName(),false)}else netStart(randName(),false)}
+      else if(e.type==='peer-unavailable')toast('😕 Nobody with that username is online right now.');
+      else if(['network','server-error','socket-error','socket-closed','browser-incompatible','ssl-unavailable'].includes(e.type)){NET.status='blocked';updNetUI()}});
+    peer.on('disconnected',()=>{if(NET.peer!==peer)return;NET.status='connecting';updNetUI();setTimeout(()=>{try{if(NET.peer===peer&&!peer.destroyed&&peer.disconnected)peer.reconnect()}catch(e){}},1000)});
+    peer.on('connection',c=>{c.on('data',d=>netData(c,d));c.on('close',()=>netClosed(c));
+      c.on('open',()=>{const md=c.metadata||{};if(md.kind==='invite'){
+        if(NET.role||NET.pend){c.send({t:'busy'});setTimeout(()=>c.close(),300);return}
+        NET.pend={c,from:md.from};showInvite(md.from)}})});
+  }).catch(()=>{NET.status='blocked';updNetUI()})}
+function netWake(){if(!NET.me&&!NET.peer)return;const p=NET.peer;
+  if(p&&!p.destroyed&&p.disconnected){try{p.reconnect()}catch(e){netStart(NET.me,false)}}else if(!p||p.destroyed)netStart(NET.me||randName(),false)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(netWake,400)});
+function updNetUI(){if(!state)renderMain();if(sheet==='friends'&&!document.activeElement?.matches?.('input'))renderSheet()}
+function netSend(c,m){try{if(c&&c.open)c.send(m)}catch(e){}}
+function netBroadcast(m,except){for(const id in NET.guests)if(id!==except)netSend(NET.guests[id].c,m)}
+function worldMsg(){return{t:'world',view,base:state.bases[view],title:title(view),res:state.res,main:state.main}}
+function netInvite(name){name=(name||'').trim();
+  if(!okName(name)){toast('Usernames are 3 to 16 letters or numbers');return}
+  if(NET.status!=='online'){toast('You’re not online yet');return}
+  if(name.toLowerCase()===NET.me.toLowerCase()){toast('That’s you! 😄');return}
+  if(NET.role==='guest'){toast('Only the world owner can invite');return}
+  if(Object.keys(NET.guests).length>=5){toast('Your world is full (5 friends max)');return}
+  const c=NET.peer.connect(peerId(name),{metadata:{kind:'invite',from:NET.me},reliable:true});
+  c.on('data',d=>netData(c,d));c.on('close',()=>netClosed(c));
+  c.on('open',()=>toast('📨 Invite sent to '+name+'!'))}
+function showInvite(from){const el=document.getElementById('invpop');
+  el.innerHTML=`<div class="invbox"><div style="font-size:40px">📨</div><b>${esc(from)} invited you to their world!</b><div class="eff">Only join people you know.</div><div class="invbtns"><button class="go" data-a="invyes">Join!</button><button class="go dim" data-a="invno">No thanks</button></div></div>`;el.className='on'}
+function hideInvite(){const el=document.getElementById('invpop');el.className='';el.innerHTML=''}
+function netData(c,d){if(!d||!d.t)return;
+  // ---- messages the host gets ----
+  if(d.t==='join'){if(NET.role==='guest'||!state){netSend(c,{t:'gone'});return}
+    if(Object.keys(NET.guests).length>=5){netSend(c,{t:'full'});setTimeout(()=>c.close(),300);return}
+    NET.role='host';NET.guests[c.peer]={c,name:String(d.name||'Friend').slice(0,14),user:String(d.user||'').slice(0,16),look:d.look||{shirt:0,hair:0,skin:0},x:P.x,z:P.z,a:0,m:0};
+    netSend(c,{...worldMsg(),t:'welcome',host:NET.me});toast(`🎉 ${NET.guests[c.peer].name} joined your world!`);renderHud();if(sheet==='friends')renderSheet();return}
+  if(d.t==='no'){toast('😶 They said no thanks.');c.close();return}
+  if(d.t==='busy'){toast('⏳ They’re busy right now. Try again later!');return}
+  if(d.t==='me'&&NET.guests[c.peer]){Object.assign(NET.guests[c.peer],{x:+d.x||0,z:+d.z||0,a:+d.a||0,m:d.m?1:0,look:d.look||NET.guests[c.peer].look});return}
+  if(d.t==='hit'&&NET.role==='host'){hostHit(+d.i);return}
+  if(d.t==='emote'){const id=NET.role==='host'?c.peer:d.id;showEmote(id,d.text);if(NET.role==='host')netBroadcast({t:'emote',id:c.peer,text:d.text},c.peer);return}
+  // ---- messages the guest gets ----
+  if(d.t==='welcome'){NET.role='guest';NET.host=c;NET.hostName=d.host;if(state&&slot!=null)save();
+    state={res:d.res,bases:{[d.view]:d.base},main:d.main,hero:{...NET.look},stamina:100,t:Date.now()};slot=null;sheet=null;
+    if(!init3D())return;render();goBase(d.view);resize();toast(`🌍 Welcome to ${d.host}’s world!`);return}
+  if(NET.role!=='guest'||c!==NET.host)return;
+  if(d.t==='world'){const same=d.view===view;state.bases={[d.view]:d.base};state.res=d.res;state.main=d.main;
+    if(same){const px=P.x,pz=P.z;buildWorld();if(walkable(px,pz)){P.x=px;P.z=pz}else placeHero(tileAt(px,pz))}else goBase(d.view);renderMain();return}
+  if(d.t==='nodes'){const b=state.bases[view];const before=Object.keys(b.nodes||{}).length;b.nodes=d.nodes||{};if(d.hit!=null){shakeT[d.hit]=.3}
+    if(Object.keys(b.nodes).length!==before)rebuildNodes();return}
+  if(d.t==='res'){state.res=d.res;renderTop();return}
+  if(d.t==='pos'){const seen={};for(const r of d.list||[]){if(r.id===NET.peer.id)continue;seen[r.id]=1;const o=NET.remotes[r.id]||(NET.remotes[r.id]={g:null,x:r.x,z:r.z,a:r.a});Object.assign(o,{tx:r.x,tz:r.z,ta:r.a,m:r.m,name:r.name,look:r.look})}
+    for(const id in NET.remotes)if(!seen[id])dropRemote(id);return}
+  if(d.t==='kick'){leaveVisit('🏠 The world owner sent you home.');return}
+  if(d.t==='full'){toast('That world is full right now.');return}
+}
+function netClosed(c){
+  if(NET.role==='host'&&NET.guests[c.peer]){const n=NET.guests[c.peer].name;delete NET.guests[c.peer];dropRemote(c.peer);toast(`👋 ${n} left`);if(!Object.keys(NET.guests).length)NET.role=null;renderHud();if(sheet==='friends')renderSheet();return}
+  if(NET.role==='guest'&&c===NET.host){leaveVisit('🔌 You got disconnected from the world.');return}
+  if(NET.pend&&NET.pend.c===c){NET.pend=null;hideInvite()}}
+function leaveVisit(msg){if(NET.role!=='guest')return;const h=NET.host;NET.role=null;NET.host=null;try{h&&h.close()}catch(e){}
+  for(const id in NET.remotes)dropRemote(id);state=null;slot=null;sheet=null;clearWorld();hero=null;render();if(msg)toast(msg)}
+function netEndHost(){if(NET.role!=='host')return;netBroadcast({t:'kick'});for(const id in NET.guests){const c=NET.guests[id].c;setTimeout(()=>{try{c.close()}catch(e){}},300)}NET.guests={};NET.role=null;for(const id in NET.remotes)dropRemote(id)}
+function kickGuest(id){const g=NET.guests[id];if(!g)return;netSend(g.c,{t:'kick'});setTimeout(()=>{try{g.c.close()}catch(e){}},300)}
+function hostHit(i){const b=state.bases[view],nd=b.nodes&&b.nodes[i];if(!nd)return;const dd=NODE[nd.t];nd.hp--;state.res[dd.res]+=HITGAIN;shakeT[i]=.3;popFx(i,RES[dd.res][0]);
+  if(nd.hp<=0){delete b.nodes[i];setTimeout(()=>{if(state)rebuildNodes()},250)}else netBroadcast({t:'nodes',nodes:b.nodes,hit:i});renderTop()}
+function tagTex(text){const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');x.font='bold 46px "Baloo 2",system-ui,sans-serif';
+  const w=Math.min(500,x.measureText(text).width+40);x.fillStyle='rgba(0,0,0,.55)';x.beginPath();x.roundRect?x.roundRect(256-w/2,14,w,68,30):x.rect(256-w/2,14,w,68);x.fill();
+  x.fillStyle='#fff';x.textAlign='center';x.textBaseline='middle';x.fillText(text,256,50);return new THREE.CanvasTexture(c)}
+function bubbleSprite(text,bg){const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.font='bold 50px "Baloo 2","Apple Color Emoji",system-ui,sans-serif';
+  const w=Math.min(500,x.measureText(text).width+50);x.fillStyle=bg||'#fff';x.beginPath();x.roundRect?x.roundRect(256-w/2,10,w,90,40):x.rect(256-w/2,10,w,90);x.fill();
+  x.fillStyle='#1f2a24';x.textAlign='center';x.textBaseline='middle';x.fillText(text,256,57);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));s.scale.set(3.2,.8,1);return s}
+function remoteMesh(o){const g=makePerson({shirt:SHIRTS[o.look?.shirt|0]??SHIRTS[0],hair:HAIRS[o.look?.hair|0]??HAIRS[0],skin:SKINS[o.look?.skin|0]??SKINS[0],gear:GEAR[view]});
+  const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:tagTex(o.name||'Friend'),transparent:true,depthWrite:false}));tag.scale.set(2.8,.52,1);tag.position.y=2.75;g.add(tag);g.userData.tag=tag;g.userData.lookKey=JSON.stringify(o.look)+o.name;return g}
+function dropRemote(id){const o=NET.remotes[id];if(o&&o.g&&world)world.remove(o.g);delete NET.remotes[id]}
+let emoteFx=[];
+function showEmote(id,text){if(!world)return;if(!EMOTES.includes(text))return;const s=bubbleSprite(text);world.add(s);emoteFx.push({s,id,life:3})}
+function sendEmote(text){if(NET.role==='guest')netSend(NET.host,{t:'emote',text});else if(NET.role==='host')netBroadcast({t:'emote',id:'host',text});showEmote('me',text)}
+function netFrame(t,dt,moving){
+  if(NET.role==='host'){for(const id in NET.guests){const g=NET.guests[id],o=NET.remotes[id]||(NET.remotes[id]={g:null,x:g.x,z:g.z,a:g.a});Object.assign(o,{tx:g.x,tz:g.z,ta:g.a,m:g.m,name:g.name,look:g.look})}}
+  if(t-NET.sendT>.1&&NET.role){NET.sendT=t;
+    if(NET.role==='guest')netSend(NET.host,{t:'me',x:+P.x.toFixed(2),z:+P.z.toFixed(2),a:+P.a.toFixed(2),m:moving?1:0,look:state.hero});
+    else{const list=[{id:'host',name:NET.me,look:state.hero,x:+P.x.toFixed(2),z:+P.z.toFixed(2),a:+P.a.toFixed(2),m:moving?1:0}];
+      for(const id in NET.guests){const g=NET.guests[id];list.push({id,name:g.name,look:g.look,x:g.x,z:g.z,a:g.a,m:g.m})}netBroadcast({t:'pos',list})}}
+  for(const id in NET.remotes){const o=NET.remotes[id];const key=JSON.stringify(o.look)+o.name;
+    if(o.g&&o.g.userData.lookKey!==key){world.remove(o.g);o.g=null}
+    if(!o.g){o.g=remoteMesh(o);o.x=o.tx??o.x;o.z=o.tz??o.z;world.add(o.g)}
+    o.x+=((o.tx??o.x)-o.x)*Math.min(1,dt*10);o.z+=((o.tz??o.z)-o.z)*Math.min(1,dt*10);o.a=lerpA(o.a||0,o.ta||0,Math.min(1,dt*10));
+    o.g.position.set(o.x,0,o.z);o.g.rotation.y=o.a;animPerson(o.g,t+id.length,!!o.m)}
+  emoteFx=emoteFx.filter(f=>{f.life-=dt;const who=f.id==='me'?{x:P.x,z:P.z}:NET.remotes[f.id];if(who)f.s.position.set(who.x,3.5,who.z);f.s.material.opacity=Math.min(1,f.life);
+    if(f.life<=0){world&&world.remove(f.s);f.s.material.map.dispose();f.s.material.dispose();return false}return true})}
+function friendsBody(){
+  let h='';
+  if(NET.status==='blocked')h+=`<p class="blurb">🔴 Online play only works when the game is on your website (like nan.ma), not inside the Claude app. Some school Wi‑Fi blocks it too.</p>`;
+  else if(NET.status!=='online')h+=`<p class="blurb">🟡 Connecting…</p>`;
+  else h+=`<p class="blurb">🟢 You are <b>${esc(NET.me)}</b></p><div class="rename"><input id="uname" maxlength="16" value="${esc(NET.me)}" autocomplete="off"><button class="go" data-a="uname">Change</button><button class="go" data-a="unamerand" aria-label="Random name">🎲</button></div>`;
+  if(NET.status==='online'&&state&&NET.role!=='guest'){
+    h+=`<p class="blurb">Type a friend’s username to invite them to your world:</p><div class="rename"><input id="invname" maxlength="16" placeholder="Like SparkyOtter" autocomplete="off"><button class="go" data-a="invite">📨 Invite</button></div>`;
+    const gs=Object.entries(NET.guests);
+    h+=gs.length?gs.map(([id,g])=>`<div class="row"><div class="info"><b>${esc(g.name)}</b><div class="eff">${esc(g.user||'')}</div></div><button class="go" data-a="kick" data-v="${esc(id)}">Send home</button></div>`).join(''):`<p class="eff">Nobody is visiting yet. Up to 5 friends can visit.</p>`}
+  if(NET.role==='guest')h+=`<p class="blurb">You’re visiting <b>${esc(NET.hostName)}</b>’s world. You can help chop and mine, but only they can build.</p><button class="go wide" data-a="leave">🚪 Leave this world</button>`;
+  if(NET.role)h+=`<p class="blurb" style="margin-top:12px">Say something:</p><div class="sws">${EMOTES.map((e,i)=>`<button class="go" data-a="emote" data-v="${i}">${e}</button>`).join('')}</div>`;
+  if(!state&&NET.status==='online')h+=`<p class="eff">Open a save to invite friends to your world. Friends can invite you any time!</p>`;
+  return h}
+function joinBody(){const sw=(arr,key)=>`<div class="sws">${arr.map((c,i)=>`<button class="sw ${NET.look[key]===i?'on':''}" style="background:#${c.toString(16).padStart(6,'0')}" data-a="joinlook" data-v="${key}:${i}" aria-label="Color ${i+1}"></button>`).join('')}</div>`;
+  return `<div class="rename"><input id="wname" maxlength="14" value="${esc(NET.wname||NET.me||'')}" placeholder="Your name in their world" autocomplete="off"></div><b>Shirt</b>${sw(SHIRTS,'shirt')}<b>Hair</b>${sw(HAIRS,'hair')}<b>Skin</b>${sw(SKINS,'skin')}<button class="go wide" data-a="joingo">Join the world!</button>`}
+
+/* ---------- UI ---------- */
+function renderTop(){
+  const top=document.getElementById('top');
+  if(!state){top.style.display='none';return}
+  top.style.display='';
+  if(!document.getElementById('resrow'))top.innerHTML=`<div class="resrow" id="resrow"></div><div class="gather"><div class="stamwrap">💪<div class="stam" id="stam"><i></i></div></div><button class="gbtn" data-p="snack">🍎 Snack</button><button class="menu" data-p="menu">💾 Saves</button></div>`;
+  const show=Object.keys(RES).filter(r=>['food','wood','stone','coins'].includes(r)||state.res[r]>0);
+  const st=document.getElementById('stam');st.firstChild.style.width=state.stamina+'%';st.classList.toggle('low',state.stamina<HITCOST*2);
+  document.getElementById('resrow').innerHTML=show.map(r=>`<span class="chip">${RES[r][0]} ${fmt(state.res[r])}</span>`).join('');
+}
+function placeHud(){const h=document.getElementById('hud'),top=document.getElementById('top');if(h&&top)h.style.top=(top.getBoundingClientRect().bottom||0)+'px'}
+function renderHud(){
+  const h=document.getElementById('hud');if(!state){h.innerHTML='';return}
+  const k=view,b=state.bases[k],s=status(k);
+  let banner='';
+  if(!s.ok){const c=s.conds.find(x=>x.dem>x.sup),fix=BASES[k].list.find(x=>(B[x].g||{})[c.c]);banner=`<div class="banner">⚠️ Not enough ${COND[c.c][1]}! Everything here stopped. Build a ${B[fix].n}.</div>`}
+  else if(s.hungry)banner=`<div class="banner">🍎 Your townspeople are hungry! Only food makers are working. Get more food!</div>`;
+  else if(s.idle)banner=`<div class="banner tip">💤 ${s.idle} building${s.idle>1?'s have':' has'} no workers. Build a house for more people!</div>`;
+  else if(isFull(b)&&(b.size||9)<MAXSIZE)banner=`<div class="banner tip">🎉 This base is full! Open 📋 Base info to make the map bigger.</div>`;
+  else if(k==='home'&&!b.grid.includes('market'))banner=`<div class="banner tip">💡 Build a 🏪 Market to make 🪙 coins!</div>`;
+  if(NET.role==='guest'){h.innerHTML=`<div class="hrow"><span class="hbtn on">🌍 ${esc(NET.hostName)}’s world: ${BASES[k].e} ${esc(title(k))}</span></div><div class="hrow"><button class="hbtn" data-p="friends">👫 Friends</button><button class="hbtn" data-p="info">📋 Base info</button><button class="hbtn" data-p="heropick">🎨 Change me</button></div>${banner}`;placeHud();return}
+  h.innerHTML=`<div class="htabs">${Object.keys(BASES).filter(x=>state.bases[x]).map(x=>`<button class="hbtn ${view===x?'on':''}" data-p="tab" data-v="${x}">${state.main===x?'⭐ ':''}${BASES[x].e} ${esc(title(x))}</button>`).join('')}<button class="hbtn" data-p="mapopen">🗺️ New bases</button></div>
+  <div class="hrow"><button class="hbtn" data-p="info">📋 Base info</button><button class="hbtn" data-p="heropick">🎨 Change me</button><button class="hbtn" data-p="friends">👫 Friends${Object.keys(NET.guests).length?' ('+Object.keys(NET.guests).length+')':''}</button></div>${banner}`;
+  placeHud()}
+function renderSlots(){
+  let h=`<div class="slots"><h1>🧱 Base Expansion</h1><p class="blurb">Walk around your own land, chop trees, mine rocks, build, and buy more land to grow your base. Then make new bases under the sea, deep in a mine, up in the sky and out in space. Pick a save file:</p>`;
+  h+=`<div class="uline">${NET.status==='online'?`🟢 You are <b>${esc(NET.me)}</b>`:NET.status==='blocked'?'🔴 Offline':'🟡 Connecting…'}<button class="pen" data-a="friends">👫 Friends</button></div>`;
+  for(let i=0;i<3;i++){const s=readSlot(i);
+    if(s){const n=Object.keys(s.bases).length,mb=s.bases[s.main];const mn=(mb&&mb.nick)||BASES[s.main].n;
+      h+=`<button class="slot" data-a="slot" data-v="${i}"><b>💾 Save ${i+1}</b><br>⭐ ${esc(mn)} and ${n} base${n>1?'s':''} total · 🪙 ${fmt(s.res.coins)}</button><button class="del" data-a="delslot" data-v="${i}">${pendingDel===i?'Tap again to delete Save '+(i+1):'🗑️ Delete'}</button>`}
+    else h+=`<button class="slot" data-a="slot" data-v="${i}"><b>✨ Save ${i+1}</b><br>Empty. Tap to start a new game.</button>`}
+  return h+'</div>'}
+function renderMain(){
+  document.body.classList.toggle('playing',!!state);
+  if(!state)document.getElementById('main').innerHTML=renderSlots();
+  renderTop();renderHud()}
+function infoBody(k){const d=BASES[k],b=state.bases[k],s=status(k);
+  const ren=renaming?`<div class="rename"><input id="nick" maxlength="24" value="${esc(b.nick)}" placeholder="Like “Summer Base”"><button class="go" data-a="renamesave">Save</button></div>`:`<button class="pen" data-a="rename">✏️ Give it a nickname</button>`;
+  const main=state.main===k?`<span class="mainbadge">⭐ Main base: everything here is 50% faster</span>`:`<button class="mainbtn" data-a="main" data-v="${k}">⭐ Make this my main base</button>`;
+  const meters=s.conds.map(c=>{const[ic,lab]=COND[c.c],bad=c.dem>c.sup,pct=c.sup?Math.min(100,c.dem/c.sup*100):(c.dem?100:0);
+    return `<div class="meter ${bad?'bad':''}">${ic} ${lab}: ${c.dem} used of ${c.sup}<div class="bar"><i style="width:${pct}%"></i></div></div>`}).join('');
+  const pr=Object.entries(s.prod);
+  return `${ren}<p class="blurb">${d.blurb}${b.nick?` (This is ${d.n}.)`:''}</p>${main}<div class="meters">${meters}</div><div class="prod">${s.ok?(pr.length?'Making: '+pr.map(([r,v])=>`${RES[r][0]} ${rate(v)}/s`).join('  '):'Nothing yet. Walk to empty land and build!'):'Nothing is being made right now.'}</div><div class="prod">👥 People: ${s.pop} (${s.staffed.length} working in buildings, ${s.free} helping you gather). Everyone eats a little 🍎 food.</div><div class="prod">Land: ${ownedN(b)} of ${(b.size||9)**2} pieces (map is ${b.size||9}×${b.size||9})</div>${isFull(b)?((b.size||9)<MAXSIZE?`<div class="row"><span class="e">🗺️</span><div class="info"><b>Make the map bigger</b><div class="eff">This base is full! Grow the map to ${(b.size||9)+2}×${(b.size||9)+2} to get more wild land to buy.</div><div>${costHTML(mapCost(k))}</div></div><button class="go ${canPay(mapCost(k))?'':'dim'}" data-a="bigmap">Grow</button></div>`:`<div class="prod">🏆 This base is as big as it can get!</div>`):''}`}
+function mapBody(){return `<p class="blurb">Unlock more bases. You can have them all in one save!</p>`+Object.keys(BASES).map(k=>{const d=BASES[k],have=!!state.bases[k];
+  const needs=d.conds.length?'Needs: '+d.conds.map(c=>COND[c].join(' ')).join(', '):'Needs nothing special';
+  if(d.secret&&!have&&!allMaxed())return `<div class="card"><div class="be">❓</div><div style="flex:1"><h3>??? Secret base</h3><p>Something hot is hiding somewhere… Fill every base with max land to find it!</p><p>${Object.keys(BASES).filter(x=>!BASES[x].secret).map(x=>`${BASES[x].e}${state.bases[x]&&state.bases[x].maxed?'✅':'⬜'}`).join(' ')}</p></div></div>`;
+  return `<div class="card"><div class="be">${d.e}</div><div style="flex:1"><h3>${have?esc(title(k)):d.n}</h3><p>${d.blurb}</p><p>${needs}</p>${have?`<button class="go" data-a="tab" data-v="${k}">Go there</button>`:`<div>${costHTML(d.unlock)}</div><button class="go ${canPay(d.unlock)?'':'dim'}" style="margin-top:6px" data-a="unlock" data-v="${k}">Unlock</button>`}</div></div>`}).join('')}
+function heroBody(){const sw=(arr,key)=>`<div class="sws">${arr.map((c,i)=>`<button class="sw ${state.hero[key]===i?'on':''}" style="background:#${c.toString(16).padStart(6,'0')}" data-a="pickhero" data-v="${key}:${i}" aria-label="Color ${i+1}"></button>`).join('')}</div>`;
+  return `<b>Shirt</b>${sw(SHIRTS,'shirt')}<b>Hair</b>${sw(HAIRS,'hair')}<b>Skin</b>${sw(SKINS,'skin')}`}
+function renderSheet(){
+  const el=document.getElementById('sheet');
+  if(sheet==null||(!state&&sheet!=='friends'&&sheet!=='join')){el.className='';el.innerHTML='';return}
+  const prevScroll=el.querySelector('.sheetbody')?.scrollTop||0;
+  const k=view,b=state&&state.bases[k];let head,body;
+  if(sheet==='friends'){head='👫 Friends';body=friendsBody()}
+  else if(sheet==='join'){head='Who do you want to be?';body=joinBody()}
+  else if(sheet==='info'){head=`${BASES[k].e} ${esc(title(k))}`;body=infoBody(k)}
+  else if(sheet==='map'){head='🗺️ New bases';body=mapBody()}
+  else if(sheet==='hero'){head='🎨 Change me';body=heroBody()}
+  else{const x=b.grid[sheet];
+    if(!b.owned[sheet]){const c=landCost(k);head='🚩 Buy this land';
+      body=`<div class="row"><div class="info"><div class="eff">${k==='mine'?'Dig out more tunnel':'Make your base bigger'}! Then you can walk and build on it.</div><div>${costHTML(c)}</div></div><button class="go ${canPay(c)?'':'dim'}" data-a="claim">Buy</button></div>`}
+    else if(!x&&(b.cloud||[])[sheet]){head='☁️ Walkable cloud';body=`<div class="row"><div class="info"><div class="eff">Normal buildings would fall right through, but these special cloud buildings work up here! They make about 2× as much, but need 2× the lift.</div></div></div><div class="row"><span class="e">☁️</span><div class="info"><b>Cloud</b><div class="eff">Turn it off to make it land again</div></div><button class="tog on" data-a="toland" aria-label="Cloud is on"><i></i></button></div>${BASES[k].cloudList.map(bk=>{const c=costOf(k,bk);return `<div class="row"><span class="e">${B[bk].e}</span><div class="info"><b>${B[bk].n}</b><div class="eff">${effects(bk)}</div><div>${costHTML(c)}</div></div><button class="go ${canPay(c)?'':'dim'}" data-a="build" data-v="${bk}">Build</button></div>`}).join('')}`}
+    else if(!x){head='🔨 Build here';
+      body=(k==='sky'?`<div class="row"><span class="e">☁️</span><div class="info"><b>Cloud</b><div class="eff">Turn this spot into a fluffy cloud you can walk on</div></div><button class="tog" data-a="tocloud" aria-label="Cloud is off"><i></i></button></div>`:'')+BASES[k].list.map(bk=>{const c=costOf(k,bk);return `<div class="row"><span class="e">${B[bk].e}</span><div class="info"><b>${B[bk].n}</b><div class="eff">${effects(bk)}</div><div>${costHTML(c)}</div></div><button class="go ${canPay(c)?'':'dim'}" data-a="build" data-v="${bk}">Build</button></div>`}).join('')}
+    else{head=`${B[x].e} ${B[x].n}`;
+      body=B[x].fixed?`<div class="row"><div class="info"><div class="eff">The heart of this base. It can’t be removed.${effects(x)?' It '+effects(x)+'.':''}</div></div></div>`:`<div class="row"><div class="info"><div class="eff">${effects(x)}</div><div class="eff">You have ${count(k,x)} here.</div></div></div><button class="go wide" data-a="remove">Remove it (get half back)</button>`}}
+  el.className='on';
+  el.innerHTML=`<div class="sheetbox"><div class="sheethead"><h2>${head}</h2><button class="x" data-a="close" aria-label="Close">✕</button></div><div class="sheetbody">${body}</div></div>`;
+  el.querySelector('.sheetbody').scrollTop=prevScroll;
+  if(sheet==='join'){const w=document.getElementById('wname');if(w)w.oninput=()=>NET.wname=w.value}
+  if(renaming){const i=document.getElementById('nick');if(i&&document.activeElement!==i)i.focus()}}
+function render(){renderMain();renderSheet()}
+function goBase(k){view=k;sheet=null;renaming=false;buildWorld();placeHero(state.bases[k].me??MID+N);camYaw=0;cam.position.set(P.x,6,P.z+7)}
+
+/* ---------- actions ---------- */
+function act(a,v){
+  if(a==='slot'){const i=+v;if(!init3D())return;slot=i;state=readSlot(i)||newState();
+    for(const k in state.bases){if(!BASES[k])delete state.bases[k];else state.bases[k]=migrate(k,state.bases[k])}
+    if(!state.hero||typeof state.hero!=='object')state.hero={shirt:1,hair:0,skin:0};if(state.stamina==null)state.stamina=100;for(const r in RES)if(state.res[r]==null)state.res[r]=0;for(const k in state.bases){if(isFull(state.bases[k]))state.bases[k].maxed=true}
+    const dt=Math.min((Date.now()-state.t)/1000,7200);if(dt>30){tick(dt);toast('Your bases kept working while you were away!')}
+    pendingDel=null;render();goBase(state.main);resize();save();return}
+  if(a==='delslot'){const i=+v;if(pendingDel===i){try{localStorage.removeItem(KEY(i))}catch(e){}pendingDel=null;toast('Deleted Save '+(i+1))}else pendingDel=i;render();return}
+  if(a==='friends'){sheet='friends';renderSheet();return}
+  if(a==='close'&&!state){sheet=null;renderSheet();return}
+  if(a==='uname'){const n=(document.getElementById('uname')?.value||'').trim();if(!okName(n)){toast('Use 3 to 16 letters or numbers, starting with a letter');return}if(n===NET.me)return;netStart(n,true);return}
+  if(a==='unamerand'){netStart(randName(),false);return}
+  if(a==='invyes'){hideInvite();if(!NET.pend)return;NET.look=state&&slot!=null?{...state.hero}:NET.look;NET.wname=NET.wname||NET.me;sheet='join';renderSheet();return}
+  if(a==='invno'){hideInvite();if(NET.pend){netSend(NET.pend.c,{t:'no'});const c=NET.pend.c;setTimeout(()=>{try{c.close()}catch(e){}},300);NET.pend=null}return}
+  if(a==='joinlook'){const[key,i]=v.split(':');NET.look[key]=+i;renderSheet();return}
+  if(a==='joingo'){const p=NET.pend;if(!p||!p.c.open){toast('That invite expired');NET.pend=null;sheet=null;renderSheet();return}
+    const n=(document.getElementById('wname')?.value||NET.me||'Friend').trim().slice(0,14)||'Friend';NET.wname=n;
+    if(NET.role==='host')netEndHost();if(state&&slot!=null)save();netSend(p.c,{t:'join',name:n,user:NET.me,look:NET.look});NET.pend=null;sheet=null;renderSheet();toast('Joining…');return}
+  if(a==='invite'){netInvite(document.getElementById('invname')?.value);return}
+  if(a==='kick'){kickGuest(v);return}
+  if(a==='leave'){leaveVisit('🏠 You went back home.');return}
+  if(a==='emote'){sendEmote(EMOTES[+v]);sheet=null;renderSheet();return}
+  if(!state)return;
+  if(NET.role==='guest'){
+    if(a==='menu'){leaveVisit('🏠 You went back home.');return}
+    if(a==='pickhero'){const[key,i]=v.split(':');NET.look[key]=+i}
+    if(['build','remove','claim','bigmap','claimcloud','tocloud','toland','unlock','main','rename','renamesave','tab','mapopen','snack'].includes(a)){toast('🔒 Only the world owner can do that');return}
+    if(a==='act'&&document.getElementById('act').dataset.t!=='hit'){toast('🔒 Only the world owner can build and buy land');return}}
+  if(a==='snack'){if(state.res.food<5){toast('You need 5 🍎 food for a snack');return}if(state.stamina>=100){toast('You’re not tired yet!');return}
+    state.res.food-=5;state.stamina=Math.min(100,state.stamina+30);toast('Yum! 💪 +30');renderTop();return}
+  if(a==='menu'){netEndHost();save();state=null;slot=null;sheet=null;renaming=false;clearWorld();hero=null;render();window.scrollTo(0,0);return}
+  if(a==='act'){const bt=document.getElementById('act');if(v===''||Date.now()<actLock)return;if(bt.dataset.t==='hit'){doHit(+v);return}sheet=+v}
+  else if(a==='info'){sheet='info'}
+  else if(a==='mapopen'){sheet='map'}
+  else if(a==='heropick'){sheet='hero'}
+  else if(a==='pickhero'){const[key,i]=v.split(':');state.hero[key]=+i;world.remove(hero);hero=makePerson({shirt:SHIRTS[state.hero.shirt],hair:HAIRS[state.hero.hair],skin:SKINS[state.hero.skin],gear:GEAR[view]});world.add(hero)}
+  else if(a==='tab'){save();goBase(v)}
+  else if(a==='close'){sheet=null;renaming=false}
+  else if(a==='build'){const onC=!!(state.bases[view].cloud||[])[sheet];if(!!B[v].cloud!==onC){toast(onC?'That would fall through the cloud!':'Cloud buildings only work on clouds ☁️');return}const c=costOf(view,v);if(!canPay(c)){toast('You need more '+missing(c));return}
+    const t=sheet;pay(c);state.bases[view].grid[t]=v;if(state.bases[view].nodes)delete state.bases[view].nodes[t];sheet=null;toast(`Built a ${B[v].n}!`);buildWorld();if(!walkable(P.x,P.z))placeHero(t)}
+  else if(a==='remove'){const b=state.bases[view],x=b.grid[sheet];if(!x||B[x].fixed)return;b.grid[sheet]=null;
+    for(const r in B[x].c)state.res[r]+=Math.floor(B[x].c[r]*Math.pow(1.2,count(view,x))/2);sheet=null;toast(`Removed the ${B[x].n}`);buildWorld()}
+  else if(a==='claim'){const b=state.bases[view],c=landCost(view);if(typeof sheet!=='number'||b.owned[sheet])return;if(!canPay(c)){toast('You need more '+missing(c));return}
+    pay(c);b.owned[sheet]=true;if(isFull(b)&&!b.maxed){b.maxed=true;setTimeout(()=>toast(allMaxed()&&!state.bases.volcano?'🌋 Every base is full! A secret base appeared in 🗺️ New bases!':'🎉 This base is full! Open 📋 Base info to make the map bigger.'),900)}seedNodes(view);if(Math.random()<.5)spawnNode(view,sheet);sheet=null;toast(view==='mine'?'You dug out more tunnel!':'Your base got bigger!');buildWorld()}
+  else if(a==='claimcloud'){const b=state.bases[view],c={coins:Math.ceil(landCost(view).coins/2)};if(typeof sheet!=='number'||b.owned[sheet])return;if(!canPay(c)){toast('You need more '+missing(c));return}
+    pay(c);b.owned[sheet]=true;(b.cloud=b.cloud||[])[sheet]=true;sheet=null;toast('☁️ A new cloud!');buildWorld()}
+  else if(a==='tocloud'){const b=state.bases[view];if(typeof sheet!=='number'||b.grid[sheet])return;(b.cloud=b.cloud||[])[sheet]=true;if(b.nodes)delete b.nodes[sheet];toast('☁️ Poof! It’s a cloud now');buildWorld()}
+  else if(a==='toland'){const b=state.bases[view];if(typeof sheet!=='number'||!b.cloud)return;b.cloud[sheet]=false;toast('🌱 It’s land again');buildWorld()}
+  else if(a==='bigmap'){const b=state.bases[view],c=mapCost(view);if(!isFull(b)||(b.size||9)>=MAXSIZE)return;if(!canPay(c)){toast('You need more '+missing(c));return}
+    pay(c);b.maxed=true;b.size=(b.size||9)+2;sheet=null;toast(`🗺️ The map grew to ${b.size}×${b.size}!`);buildWorld()}
+  else if(a==='unlock'){if(BASES[v].secret&&!allMaxed()){toast('🔒 Fill every base with max land first!');return}const c=BASES[v].unlock;if(!canPay(c)){toast('You need more '+missing(c));return}
+    pay(c);state.bases[v]=makeBase(v);toast(`${BASES[v].n} unlocked!`);save();goBase(v)}
+  else if(a==='main'){state.main=v;toast(`${title(v)} is your main base now`)}
+  else if(a==='rename'){renaming=true}
+  else if(a==='renamesave'){const i=document.getElementById('nick');state.bases[view].nick=(i?i.value:'').trim().slice(0,24);renaming=false}
+  save();render();
+}
+// HUD buttons react the moment a finger touches them, even while the other thumb is on the joystick
+document.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-p]');if(!t)return;e.preventDefault();act(t.dataset.p,t.dataset.v)});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(t){act(t.dataset.a,t.dataset.v);return}
+  if(e.target.id==='sheet'){sheet=null;renaming=false;renderSheet()}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='nick')act('renamesave')});
+let regrowN=0;
+setInterval(()=>{if(!state)return;if(NET.role!=='guest')tick(1);state.stamina=Math.min(100,state.stamina+2);if(NET.role!=='guest'&&++regrowN%12===0)regrow();if(NET.role==='host')netBroadcast({t:'res',res:state.res});renderTop();renderHud();if(sheet!=null&&!renaming)renderSheet()},1000);
+setInterval(save,5000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+render();
+(function(){let n=null;try{n=localStorage.getItem('bx-username')}catch(e){}netStart(n&&okName(n)?n:randName(),false)})();
+</script>
+</body>
+</html>
